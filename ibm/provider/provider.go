@@ -632,6 +632,7 @@ func Provider() *schema.Provider {
 			"ibm_cm_offering":          catalogmanagement.DataSourceIBMCmOffering(),
 			"ibm_cm_version":           catalogmanagement.DataSourceIBMCmVersion(),
 			"ibm_cm_offering_instance": catalogmanagement.DataSourceIBMCmOfferingInstance(),
+			"ibm_cm_preset":            catalogmanagement.DataSourceIBMCmPreset(),
 
 			// //Added for Resource Tag
 			"ibm_resource_tag": globaltagging.DataSourceIBMResourceTag(),
