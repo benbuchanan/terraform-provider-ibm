@@ -5,6 +5,7 @@ package catalogmanagement
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -24,13 +25,12 @@ func DataSourceIBMCmPreset() *schema.Resource {
 			"id": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
-				Description: "The ID of the preset.  Format is <catalog_id>-<object_name>-<version>",
+				Description: "The ID of the preset.  Format is <catalog_id>-<object_name>:<version>",
 			},
 			"preset": &schema.Schema{
-				Type:        schema.TypeMap,
+				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "The map of preset values.",
-				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description: "The map of preset values as a JSON string.",
 			},
 		},
 	}
@@ -43,10 +43,11 @@ func dataSourceIBMCmPresetRead(context context.Context, d *schema.ResourceData, 
 	}
 
 	presetID := d.Get("id").(string)
-	splitID := strings.Split(presetID, "-")
+	splitID := strings.Split(presetID, ":")
 	version := splitID[len(splitID)-1]
-	objectID := strings.Join(splitID[:len(splitID)-1], "-")
-	catalogID := strings.Join(splitID[:len(splitID)-2], "-")
+	objectID := splitID[0]
+	splitID = strings.Split(presetID, "-")
+	catalogID := strings.Join(splitID[:5], "-")
 
 	getObjectOptions := &catalogmanagementv1.GetObjectOptions{}
 
@@ -74,7 +75,11 @@ func dataSourceIBMCmPresetRead(context context.Context, d *schema.ResourceData, 
 		return diag.FromErr(fmt.Errorf("Error setting preset, preset field not found in version %s. %s", version, err))
 	}
 
-	if err = d.Set("preset", catalogObject.Data["versions"].(map[string]interface{})[version].(map[string]interface{})["preset"]); err != nil {
+	presetMap, err := json.Marshal(catalogObject.Data["versions"].(map[string]interface{})[version].(map[string]interface{})["preset"])
+	if err != nil {
+		return diag.FromErr(fmt.Errorf("Error setting preset, error with json marshal: %s", err))
+	}
+	if err = d.Set("preset", string(presetMap)); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting preset: %s", err))
 	}
 
