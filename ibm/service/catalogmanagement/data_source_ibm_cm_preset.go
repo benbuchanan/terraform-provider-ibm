@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -43,6 +44,14 @@ func dataSourceIBMCmPresetRead(context context.Context, d *schema.ResourceData, 
 	}
 
 	presetID := d.Get("id").(string)
+	regex := "[A-Za-z0-9]+-[A-Za-z0-9]+-[A-Za-z0-9]+-[A-Za-z0-9]+-[A-Za-z0-9]+-([A-Za-z0-9]+(_[A-Za-z0-9]+)+):[A-Za-z0-9]"
+	match, err := regexp.MatchString(regex, presetID)
+	if err != nil {
+		return diag.FromErr(fmt.Errorf("error attempting regex match string %s", err))
+	}
+	if !match {
+		return diag.FromErr(fmt.Errorf("Error: Preset ID does not match required format. Must be <catalog_id>-<object_name>:<version> %s", err))
+	}
 	splitID := strings.Split(presetID, ":")
 	version := splitID[len(splitID)-1]
 	objectID := splitID[0]
