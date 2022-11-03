@@ -14,8 +14,8 @@ Provides a read-only data source for cm_object. You can then reference the field
 
 ```hcl
 data "ibm_cm_object" "cm_object" {
-	catalog_identifier = ibm_cm_object.cm_object.catalog_identifier
-	object_identifier = ibm_cm_object.cm_object.catalogObject_id
+	catalog_id = ibm_cm_object.cm_object.catalog_id
+	object_id = ibm_cm_object.cm_object.id
 }
 ```
 
@@ -23,8 +23,8 @@ data "ibm_cm_object" "cm_object" {
 
 Review the argument reference that you can specify for your data source.
 
-* `catalog_identifier` - (Required, Forces new resource, String) Catalog identifier.
-* `object_identifier` - (Required, Forces new resource, String) Object identifier.
+* `catalog_id` - (Required, Forces new resource, String) Catalog identifier.
+* `object_id` - (Required, Forces new resource, String) Object identifier.
 
 ## Attribute Reference
 

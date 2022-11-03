@@ -28,7 +28,7 @@ func ResourceIBMCmObject() *schema.Resource {
 		Importer:      &schema.ResourceImporter{},
 
 		Schema: map[string]*schema.Schema{
-			"catalog_identifier": &schema.Schema{
+			"catalog_id": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
@@ -165,11 +165,6 @@ func ResourceIBMCmObject() *schema.Resource {
 					},
 				},
 			},
-			"catalog_id": &schema.Schema{
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "The id of the catalog containing this offering.",
-			},
 			"catalog_name": &schema.Schema{
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -202,15 +197,12 @@ func resourceIBMCmObjectCreate(context context.Context, d *schema.ResourceData, 
 
 	createObjectOptions := &catalogmanagementv1.CreateObjectOptions{}
 
-	createObjectOptions.SetCatalogIdentifier(d.Get("catalog_identifier").(string))
+	createObjectOptions.SetCatalogIdentifier(d.Get("catalog_id").(string))
 	if _, ok := d.GetOk("name"); ok {
 		createObjectOptions.SetName(d.Get("name").(string))
 	}
 	if _, ok := d.GetOk("parent_id"); ok {
 		createObjectOptions.SetParentID(d.Get("parent_id").(string))
-	}
-	if _, ok := d.GetOk("label_i18n"); ok {
-		// TODO: Add code to handle map container: LabelI18n
 	}
 	if _, ok := d.GetOk("label"); ok {
 		createObjectOptions.SetLabel(d.Get("label").(string))
@@ -220,9 +212,6 @@ func resourceIBMCmObjectCreate(context context.Context, d *schema.ResourceData, 
 	}
 	if _, ok := d.GetOk("short_description"); ok {
 		createObjectOptions.SetShortDescription(d.Get("short_description").(string))
-	}
-	if _, ok := d.GetOk("short_description_i18n"); ok {
-		// TODO: Add code to handle map container: ShortDescriptionI18n
 	}
 	if _, ok := d.GetOk("kind"); ok {
 		createObjectOptions.SetKind(d.Get("kind").(string))
@@ -234,7 +223,7 @@ func resourceIBMCmObjectCreate(context context.Context, d *schema.ResourceData, 
 		return diag.FromErr(fmt.Errorf("CreateObjectWithContext failed %s\n%s", err, response))
 	}
 
-	d.SetId(fmt.Sprintf("%s/%s", *createObjectOptions.CatalogIdentifier, *catalogObject.ID))
+	d.SetId(*catalogObject.ID)
 
 	// update data here if provided in resource
 	replaceObjectOptions := &catalogmanagementv1.ReplaceObjectOptions{}
@@ -296,13 +285,8 @@ func resourceIBMCmObjectRead(context context.Context, d *schema.ResourceData, me
 
 	getObjectOptions := &catalogmanagementv1.GetObjectOptions{}
 
-	parts, err := flex.SepIdParts(d.Id(), "/")
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	getObjectOptions.SetCatalogIdentifier(parts[0])
-	getObjectOptions.SetObjectIdentifier(parts[1])
+	getObjectOptions.SetCatalogIdentifier(d.Get("catalog_id").(string))
+	getObjectOptions.SetObjectIdentifier(d.Id())
 
 	catalogObject, response, err := catalogManagementClient.GetObjectWithContext(context, getObjectOptions)
 	if err != nil {
@@ -314,8 +298,8 @@ func resourceIBMCmObjectRead(context context.Context, d *schema.ResourceData, me
 		return diag.FromErr(fmt.Errorf("GetObjectWithContext failed %s\n%s", err, response))
 	}
 
-	if err = d.Set("catalog_identifier", getObjectOptions.CatalogIdentifier); err != nil {
-		return diag.FromErr(fmt.Errorf("Error setting catalog_identifier: %s", err))
+	if err = d.Set("catalog_id", getObjectOptions.CatalogIdentifier); err != nil {
+		return diag.FromErr(fmt.Errorf("Error setting catalog_id: %s", err))
 	}
 	if err = d.Set("name", catalogObject.Name); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting name: %s", err))
@@ -328,9 +312,6 @@ func resourceIBMCmObjectRead(context context.Context, d *schema.ResourceData, me
 	}
 	if err = d.Set("parent_id", catalogObject.ParentID); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting parent_id: %s", err))
-	}
-	if catalogObject.LabelI18n != nil {
-		// TODO: handle LabelI18n of type TypeMap -- not primitive type, not list
 	}
 	if err = d.Set("label", catalogObject.Label); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting label: %s", err))
@@ -349,20 +330,18 @@ func resourceIBMCmObjectRead(context context.Context, d *schema.ResourceData, me
 	if err = d.Set("short_description", catalogObject.ShortDescription); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting short_description: %s", err))
 	}
-	if catalogObject.ShortDescriptionI18n != nil {
-		// TODO: handle ShortDescriptionI18n of type TypeMap -- not primitive type, not list
-	}
 	if err = d.Set("kind", catalogObject.Kind); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting kind: %s", err))
 	}
+	publishMap := map[string]interface{}{}
 	if catalogObject.Publish != nil {
-		publishMap, err := resourceIBMCmObjectPublishObjectToMap(catalogObject.Publish)
+		publishMap, err = resourceIBMCmObjectPublishObjectToMap(catalogObject.Publish)
 		if err != nil {
 			return diag.FromErr(err)
 		}
-		if err = d.Set("publish", []map[string]interface{}{publishMap}); err != nil {
-			return diag.FromErr(fmt.Errorf("Error setting publish: %s", err))
-		}
+	}
+	if err = d.Set("publish", []map[string]interface{}{publishMap}); err != nil {
+		return diag.FromErr(fmt.Errorf("Error setting publish: %s", err))
 	}
 	if catalogObject.State != nil {
 		stateMap, err := resourceIBMCmObjectStateToMap(catalogObject.State)
@@ -407,13 +386,8 @@ func resourceIBMCmObjectUpdate(context context.Context, d *schema.ResourceData, 
 
 	getObjectOptions := &catalogmanagementv1.GetObjectOptions{}
 
-	parts, err := flex.SepIdParts(d.Id(), "/")
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	getObjectOptions.SetCatalogIdentifier(parts[0])
-	getObjectOptions.SetObjectIdentifier(parts[1])
+	getObjectOptions.SetCatalogIdentifier(d.Get("catalog_id").(string))
+	getObjectOptions.SetObjectIdentifier(d.Id())
 
 	catalogObject, response, err := catalogManagementClient.GetObjectWithContext(context, getObjectOptions)
 	if err != nil {
@@ -537,13 +511,8 @@ func resourceIBMCmObjectDelete(context context.Context, d *schema.ResourceData, 
 
 	deleteObjectOptions := &catalogmanagementv1.DeleteObjectOptions{}
 
-	parts, err := flex.SepIdParts(d.Id(), "/")
-	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	deleteObjectOptions.SetCatalogIdentifier(parts[0])
-	deleteObjectOptions.SetObjectIdentifier(parts[1])
+	deleteObjectOptions.SetCatalogIdentifier(d.Get("catalog_id").(string))
+	deleteObjectOptions.SetObjectIdentifier(d.Id())
 
 	response, err := catalogManagementClient.DeleteObjectWithContext(context, deleteObjectOptions)
 	if err != nil {

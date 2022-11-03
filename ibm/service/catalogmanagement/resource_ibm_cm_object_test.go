@@ -13,7 +13,6 @@ import (
 
 	acc "github.com/IBM-Cloud/terraform-provider-ibm/ibm/acctest"
 	"github.com/IBM-Cloud/terraform-provider-ibm/ibm/conns"
-	"github.com/IBM-Cloud/terraform-provider-ibm/ibm/flex"
 	"github.com/IBM/platform-services-go-sdk/catalogmanagementv1"
 )
 
@@ -49,12 +48,12 @@ func testAccCheckIBMCmObjectConfig(name string, parentID string, label string, s
 	return fmt.Sprintf(`
 
 		resource "ibm_cm_catalog" "cm_catalog" {
-			label = "test_vpe_catalog_tf_test"
+			label = "test_preset_catalog_tf_test"
 			kind = "preset_configuration"
 		}
 
 		resource "ibm_cm_object" "cm_object" {
-			catalog_identifier = ibm_cm_catalog.cm_catalog.id
+			catalog_id = ibm_cm_catalog.cm_catalog.id
 			name = "%s"
 			parent_id = "%s"
 			label = "%s"
@@ -79,13 +78,8 @@ func testAccCheckIBMCmObjectExists(n string, obj catalogmanagementv1.CatalogObje
 
 		getObjectOptions := &catalogmanagementv1.GetObjectOptions{}
 
-		parts, err := flex.SepIdParts(rs.Primary.ID, "/")
-		if err != nil {
-			return err
-		}
-
-		getObjectOptions.SetCatalogIdentifier(parts[0])
-		getObjectOptions.SetObjectIdentifier(parts[1])
+		getObjectOptions.SetCatalogIdentifier(rs.Primary.Attributes["catalog_id"])
+		getObjectOptions.SetObjectIdentifier(rs.Primary.ID)
 
 		catalogObject, _, err := catalogManagementClient.GetObject(getObjectOptions)
 		if err != nil {
@@ -109,13 +103,8 @@ func testAccCheckIBMCmObjectDestroy(s *terraform.State) error {
 
 		getObjectOptions := &catalogmanagementv1.GetObjectOptions{}
 
-		parts, err := flex.SepIdParts(rs.Primary.ID, "/")
-		if err != nil {
-			return err
-		}
-
-		getObjectOptions.SetCatalogIdentifier(parts[0])
-		getObjectOptions.SetObjectIdentifier(parts[1])
+		getObjectOptions.SetCatalogIdentifier(rs.Primary.Attributes["catalog_id"])
+		getObjectOptions.SetObjectIdentifier(rs.Primary.ID)
 
 		// Try to find the key
 		_, response, err := catalogManagementClient.GetObject(getObjectOptions)

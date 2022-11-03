@@ -22,12 +22,12 @@ func DataSourceIBMCmObject() *schema.Resource {
 		ReadContext: dataSourceIBMCmObjectRead,
 
 		Schema: map[string]*schema.Schema{
-			"catalog_identifier": &schema.Schema{
+			"catalog_id": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "Catalog identifier.",
 			},
-			"object_identifier": &schema.Schema{
+			"object_id": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "Object identifier.",
@@ -179,11 +179,6 @@ func DataSourceIBMCmObject() *schema.Resource {
 					},
 				},
 			},
-			"catalog_id": &schema.Schema{
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "The id of the catalog containing this offering.",
-			},
 			"catalog_name": &schema.Schema{
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -206,8 +201,8 @@ func dataSourceIBMCmObjectRead(context context.Context, d *schema.ResourceData, 
 
 	getObjectOptions := &catalogmanagementv1.GetObjectOptions{}
 
-	getObjectOptions.SetCatalogIdentifier(d.Get("catalog_identifier").(string))
-	getObjectOptions.SetObjectIdentifier(d.Get("object_identifier").(string))
+	getObjectOptions.SetCatalogIdentifier(d.Get("catalog_id").(string))
+	getObjectOptions.SetObjectIdentifier(d.Get("object_id").(string))
 
 	catalogObject, response, err := catalogManagementClient.GetObjectWithContext(context, getObjectOptions)
 	if err != nil {
@@ -215,7 +210,7 @@ func dataSourceIBMCmObjectRead(context context.Context, d *schema.ResourceData, 
 		return diag.FromErr(fmt.Errorf("GetObjectWithContext failed %s\n%s", err, response))
 	}
 
-	d.SetId(fmt.Sprintf("%s/%s", *getObjectOptions.CatalogIdentifier, *getObjectOptions.ObjectIdentifier))
+	d.SetId(*getObjectOptions.ObjectIdentifier)
 
 	if err = d.Set("catalog_object_id", catalogObject.ID); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting catalog_object_id: %s", err))
@@ -301,10 +296,6 @@ func dataSourceIBMCmObjectRead(context context.Context, d *schema.ResourceData, 
 	}
 	if err = d.Set("state", state); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting state %s", err))
-	}
-
-	if err = d.Set("catalog_id", catalogObject.CatalogID); err != nil {
-		return diag.FromErr(fmt.Errorf("Error setting catalog_id: %s", err))
 	}
 
 	if err = d.Set("catalog_name", catalogObject.CatalogName); err != nil {
