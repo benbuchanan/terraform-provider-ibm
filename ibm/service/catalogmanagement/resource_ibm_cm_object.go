@@ -226,36 +226,37 @@ func resourceIBMCmObjectCreate(context context.Context, d *schema.ResourceData, 
 	d.SetId(*catalogObject.ID)
 
 	// update data here if provided in resource
-	replaceObjectOptions := &catalogmanagementv1.ReplaceObjectOptions{}
-	replaceObjectOptions.SetCatalogIdentifier(*catalogObject.CatalogID)
-	replaceObjectOptions.SetObjectIdentifier(*catalogObject.ID)
-	replaceObjectOptions.SetID(*catalogObject.ID)
-	replaceObjectOptions.SetCRN(*catalogObject.CRN)
-	replaceObjectOptions.SetURL(*catalogObject.URL)
-	replaceObjectOptions.SetCatalogName(*catalogObject.CatalogName)
-	replaceObjectOptions.SetCatalogID(*catalogObject.CatalogID)
-	replaceObjectOptions.SetKind(*catalogObject.Kind)
-	replaceObjectOptions.SetRev(*catalogObject.Rev)
-	replaceObjectOptions.SetCreated(*&catalogObject.Created)
-	replaceObjectOptions.SetUpdated(*&catalogObject.Updated)
-	replaceObjectOptions.SetPublish(*&catalogObject.Publish)
-	replaceObjectOptions.SetState(*&catalogObject.State)
-	if catalogObject.Label != nil {
-		replaceObjectOptions.SetLabel(*catalogObject.Label)
-	}
-	if catalogObject.Name != nil {
-		replaceObjectOptions.SetName(*catalogObject.Name)
-	}
-	if catalogObject.ParentID != nil {
-		replaceObjectOptions.SetParentID(*catalogObject.ParentID)
-	}
-	if catalogObject.ShortDescription != nil {
-		replaceObjectOptions.SetShortDescription(*catalogObject.ShortDescription)
-	}
-	if catalogObject.Tags != nil {
-		replaceObjectOptions.SetTags(catalogObject.Tags)
-	}
 	if _, ok := d.GetOk("data"); ok {
+		replaceObjectOptions := &catalogmanagementv1.ReplaceObjectOptions{}
+		replaceObjectOptions.SetCatalogIdentifier(*catalogObject.CatalogID)
+		replaceObjectOptions.SetObjectIdentifier(*catalogObject.ID)
+		replaceObjectOptions.SetID(*catalogObject.ID)
+		replaceObjectOptions.SetCRN(*catalogObject.CRN)
+		replaceObjectOptions.SetURL(*catalogObject.URL)
+		replaceObjectOptions.SetCatalogName(*catalogObject.CatalogName)
+		replaceObjectOptions.SetCatalogID(*catalogObject.CatalogID)
+		replaceObjectOptions.SetKind(*catalogObject.Kind)
+		replaceObjectOptions.SetRev(*catalogObject.Rev)
+		replaceObjectOptions.SetCreated(*&catalogObject.Created)
+		replaceObjectOptions.SetUpdated(*&catalogObject.Updated)
+		replaceObjectOptions.SetPublish(*&catalogObject.Publish)
+		replaceObjectOptions.SetState(*&catalogObject.State)
+		if catalogObject.Label != nil {
+			replaceObjectOptions.SetLabel(*catalogObject.Label)
+		}
+		if catalogObject.Name != nil {
+			replaceObjectOptions.SetName(*catalogObject.Name)
+		}
+		if catalogObject.ParentID != nil {
+			replaceObjectOptions.SetParentID(*catalogObject.ParentID)
+		}
+		if catalogObject.ShortDescription != nil {
+			replaceObjectOptions.SetShortDescription(*catalogObject.ShortDescription)
+		}
+		if catalogObject.Tags != nil {
+			replaceObjectOptions.SetTags(catalogObject.Tags)
+		}
+
 		dataMap := make(map[string]interface{})
 		dataString, err := strconv.Unquote(d.Get("data").(string))
 		if err != nil {
@@ -266,12 +267,12 @@ func resourceIBMCmObjectCreate(context context.Context, d *schema.ResourceData, 
 			return diag.FromErr(fmt.Errorf("error unmarshalling json %s", err))
 		}
 		replaceObjectOptions.SetData(dataMap)
-	}
 
-	catalogObject, response, err = catalogManagementClient.ReplaceObjectWithContext(context, replaceObjectOptions)
-	if err != nil {
-		log.Printf("[DEBUG] ReplaceObjectWithContext failed %s\n%s", err, response)
-		return diag.FromErr(fmt.Errorf("ReplaceObjectWithContext failed %s\n%s", err, response))
+		catalogObject, response, err = catalogManagementClient.ReplaceObjectWithContext(context, replaceObjectOptions)
+		if err != nil {
+			log.Printf("[DEBUG] ReplaceObjectWithContext failed %s\n%s", err, response)
+			return diag.FromErr(fmt.Errorf("ReplaceObjectWithContext failed %s\n%s", err, response))
+		}
 	}
 
 	return resourceIBMCmObjectRead(context, d, meta)
