@@ -34,7 +34,7 @@ func DataSourceIBMCdToolchainToolSaucelabs() *schema.Resource {
 			"resource_group_id": &schema.Schema{
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Resource group where the tool is located.",
+				Description: "Resource group where tool can be found.",
 			},
 			"crn": &schema.Schema{
 				Type:        schema.TypeString,
@@ -60,12 +60,12 @@ func DataSourceIBMCdToolchainToolSaucelabs() *schema.Resource {
 						"ui_href": &schema.Schema{
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "URI representing this resource through the UI.",
+							Description: "URI representing the this resource through the UI.",
 						},
 						"api_href": &schema.Schema{
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "URI representing this resource through an API.",
+							Description: "URI representing the this resource through an API.",
 						},
 					},
 				},
@@ -83,19 +83,19 @@ func DataSourceIBMCdToolchainToolSaucelabs() *schema.Resource {
 			"parameters": &schema.Schema{
 				Type:        schema.TypeList,
 				Computed:    true,
-				Description: "Unique key-value pairs representing parameters to be used to create the tool. A list of parameters for each tool integration can be found in the <a href=\"https://cloud.ibm.com/docs/ContinuousDelivery?topic=ContinuousDelivery-integrations\">Configuring tool integrations page</a>.",
+				Description: "Unique key-value pairs representing parameters to be used to create the tool.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"username": &schema.Schema{
 							Type:        schema.TypeString,
 							Computed:    true,
-							Description: "The user name for the Sauce Labs account.",
+							Description: "Type the user name for your Sauce Labs account.",
 						},
-						"access_key": &schema.Schema{
+						"key": &schema.Schema{
 							Type:        schema.TypeString,
 							Computed:    true,
 							Sensitive:   true,
-							Description: "The access key for the Sauce Labs account. You can use a toolchain secret reference for this parameter. For more information, see [Protecting your sensitive data in Continuous Delivery](https://cloud.ibm.com/docs/ContinuousDelivery?topic=ContinuousDelivery-cd_data_security#cd_secure_credentials).",
+							Description: "Type your Sauce Labs access key. You can find your access key near the lower-left corner of your Sauce Labs account page.",
 						},
 					},
 				},
@@ -170,10 +170,7 @@ func dataSourceIBMCdToolchainToolSaucelabsRead(context context.Context, d *schem
 
 	parameters := []map[string]interface{}{}
 	if toolchainTool.Parameters != nil {
-		remapFields := map[string]string{
-			"access_key": "key",
-		}
-		modelMap := GetParametersFromRead(toolchainTool.Parameters, DataSourceIBMCdToolchainToolSaucelabs(), remapFields)
+		modelMap := GetParametersFromRead(toolchainTool.Parameters, DataSourceIBMCdToolchainToolSaucelabs(), nil)
 		parameters = append(parameters, modelMap)
 	}
 	if err = d.Set("parameters", parameters); err != nil {

@@ -26,13 +26,13 @@ func ResourceIBMCmOffering() *schema.Resource {
 		Importer:      &schema.ResourceImporter{},
 
 		Schema: map[string]*schema.Schema{
-			"catalog_id": &schema.Schema{
+			"catalog_identifier": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 				Description: "Catalog identifier.",
 			},
-			"offering_id": &schema.Schema{
+			"offering_identifier": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
@@ -1946,6 +1946,11 @@ func ResourceIBMCmOffering() *schema.Resource {
 				Optional:    true,
 				Description: "The portal UI URL.",
 			},
+			"catalog_id": &schema.Schema{
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The id of the catalog containing this offering.",
+			},
 			"catalog_name": &schema.Schema{
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -2394,10 +2399,10 @@ func ResourceIBMCmOffering() *schema.Resource {
 				Computed:    true,
 				Description: "Cloudant revision.",
 			},
-			"offering_identifier": &schema.Schema{
+			"offering_id": &schema.Schema{
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Computed Offering ID.",
+				Description: "unique id.",
 			},
 		},
 	}
@@ -2409,10 +2414,10 @@ func resourceIBMCmOfferingCreate(context context.Context, d *schema.ResourceData
 		return diag.FromErr(err)
 	}
 
-	if _, ok := d.GetOk("offering_id"); ok {
+	if _, ok := d.GetOk("offering_identifier"); ok {
 		getOfferingOptions := &catalogmanagementv1.GetOfferingOptions{}
-		getOfferingOptions.SetCatalogIdentifier(d.Get("catalog_id").(string))
-		getOfferingOptions.SetOfferingID(d.Get("offering_id").(string))
+		getOfferingOptions.SetCatalogIdentifier(d.Get("catalog_identifier").(string))
+		getOfferingOptions.SetOfferingID(d.Get("offering_identifier").(string))
 
 		offering, response, err := catalogManagementClient.GetOfferingWithContext(context, getOfferingOptions)
 		if err != nil {
@@ -2424,13 +2429,13 @@ func resourceIBMCmOfferingCreate(context context.Context, d *schema.ResourceData
 			return diag.FromErr(fmt.Errorf("GetOfferingWithContext failed %s\n%s", err, response))
 		}
 
-		d.SetId(*offering.ID)
+		d.SetId(fmt.Sprintf("%s/%s", *offering.CatalogID, *offering.ID))
 		return resourceIBMCmOfferingRead(context, d, meta)
 	}
 
 	createOfferingOptions := &catalogmanagementv1.CreateOfferingOptions{}
 
-	createOfferingOptions.SetCatalogIdentifier(d.Get("catalog_id").(string))
+	createOfferingOptions.SetCatalogIdentifier(d.Get("catalog_identifier").(string))
 	if _, ok := d.GetOk("url"); ok {
 		createOfferingOptions.SetURL(d.Get("url").(string))
 	}
@@ -2439,6 +2444,9 @@ func resourceIBMCmOfferingCreate(context context.Context, d *schema.ResourceData
 	}
 	if _, ok := d.GetOk("label"); ok {
 		createOfferingOptions.SetLabel(d.Get("label").(string))
+	}
+	if _, ok := d.GetOk("label_i18n"); ok {
+		// TODO: Add code to handle map container: LabelI18n
 	}
 	if _, ok := d.GetOk("name"); ok {
 		createOfferingOptions.SetName(d.Get("name").(string))
@@ -2482,8 +2490,14 @@ func resourceIBMCmOfferingCreate(context context.Context, d *schema.ResourceData
 	if _, ok := d.GetOk("short_description"); ok {
 		createOfferingOptions.SetShortDescription(d.Get("short_description").(string))
 	}
+	if _, ok := d.GetOk("short_description_i18n"); ok {
+		// TODO: Add code to handle map container: ShortDescriptionI18n
+	}
 	if _, ok := d.GetOk("long_description"); ok {
 		createOfferingOptions.SetLongDescription(d.Get("long_description").(string))
+	}
+	if _, ok := d.GetOk("long_description_i18n"); ok {
+		// TODO: Add code to handle map container: LongDescriptionI18n
 	}
 	if _, ok := d.GetOk("features"); ok {
 		var features []catalogmanagementv1.Feature
@@ -2551,12 +2565,18 @@ func resourceIBMCmOfferingCreate(context context.Context, d *schema.ResourceData
 	if _, ok := d.GetOk("catalog_name"); ok {
 		createOfferingOptions.SetCatalogName(d.Get("catalog_name").(string))
 	}
+	if _, ok := d.GetOk("metadata"); ok {
+		// TODO: Add code to handle map container: Metadata
+	}
 	if _, ok := d.GetOk("disclaimer"); ok {
 		createOfferingOptions.SetDisclaimer(d.Get("disclaimer").(string))
 	}
 	if _, ok := d.GetOk("hidden"); ok {
 		createOfferingOptions.SetHidden(d.Get("hidden").(bool))
 	}
+	// if _, ok := d.GetOk("provider"); ok {
+	// 	createOfferingOptions.SetProvider(d.Get("provider").(string))
+	// }
 	if _, ok := d.GetOk("provider_info"); ok {
 		providerInfoModel, err := resourceIBMCmOfferingMapToProviderInfo(d.Get("provider_info.0").(map[string]interface{}))
 		if err != nil {
@@ -2631,7 +2651,7 @@ func resourceIBMCmOfferingCreate(context context.Context, d *schema.ResourceData
 		return diag.FromErr(fmt.Errorf("CreateOfferingWithContext failed %s\n%s", err, response))
 	}
 
-	d.SetId(*offering.ID)
+	d.SetId(fmt.Sprintf("%s/%s", *createOfferingOptions.CatalogIdentifier, *offering.ID))
 
 	shareOffering := false
 	shareOfferingOptions := catalogmanagementv1.ShareOfferingOptions{}
@@ -2680,8 +2700,13 @@ func resourceIBMCmOfferingRead(context context.Context, d *schema.ResourceData, 
 
 	getOfferingOptions := &catalogmanagementv1.GetOfferingOptions{}
 
-	getOfferingOptions.SetCatalogIdentifier(d.Get("catalog_id").(string))
-	getOfferingOptions.SetOfferingID(d.Id())
+	parts, err := flex.SepIdParts(d.Id(), "/")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	getOfferingOptions.SetCatalogIdentifier(parts[0])
+	getOfferingOptions.SetOfferingID(parts[1])
 
 	offering, response, err := catalogManagementClient.GetOfferingWithContext(context, getOfferingOptions)
 	if err != nil {
@@ -2693,8 +2718,8 @@ func resourceIBMCmOfferingRead(context context.Context, d *schema.ResourceData, 
 		return diag.FromErr(fmt.Errorf("GetOfferingWithContext failed %s\n%s", err, response))
 	}
 
-	if err = d.Set("catalog_id", getOfferingOptions.CatalogIdentifier); err != nil {
-		return diag.FromErr(fmt.Errorf("Error setting catalog_id: %s", err))
+	if err = d.Set("catalog_identifier", getOfferingOptions.CatalogIdentifier); err != nil {
+		return diag.FromErr(fmt.Errorf("Error setting catalog_identifier: %s", err))
 	}
 	if err = d.Set("url", offering.URL); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting url: %s", err))
@@ -2704,6 +2729,9 @@ func resourceIBMCmOfferingRead(context context.Context, d *schema.ResourceData, 
 	}
 	if err = d.Set("label", offering.Label); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting label: %s", err))
+	}
+	if offering.LabelI18n != nil {
+		// TODO: handle LabelI18n of type TypeMap -- not primitive type, not list
 	}
 	if err = d.Set("name", offering.Name); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting name: %s", err))
@@ -2717,6 +2745,11 @@ func resourceIBMCmOfferingRead(context context.Context, d *schema.ResourceData, 
 	if err = d.Set("offering_support_url", offering.OfferingSupportURL); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting offering_support_url: %s", err))
 	}
+	// if offering.Tags != nil {
+	// 	if err = d.Set("tags", offering.Tags); err != nil {
+	// 		return diag.FromErr(fmt.Errorf("Error setting tags: %s", err))
+	// 	}
+	// }
 	if offering.Keywords != nil {
 		if err = d.Set("keywords", offering.Keywords); err != nil {
 			return diag.FromErr(fmt.Errorf("Error setting keywords: %s", err))
@@ -2740,8 +2773,14 @@ func resourceIBMCmOfferingRead(context context.Context, d *schema.ResourceData, 
 	if err = d.Set("short_description", offering.ShortDescription); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting short_description: %s", err))
 	}
+	if offering.ShortDescriptionI18n != nil {
+		// TODO: handle ShortDescriptionI18n of type TypeMap -- not primitive type, not list
+	}
 	if err = d.Set("long_description", offering.LongDescription); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting long_description: %s", err))
+	}
+	if offering.LongDescriptionI18n != nil {
+		// TODO: handle LongDescriptionI18n of type TypeMap -- not primitive type, not list
 	}
 	features := []map[string]interface{}{}
 	if offering.Features != nil {
@@ -2811,12 +2850,18 @@ func resourceIBMCmOfferingRead(context context.Context, d *schema.ResourceData, 
 	if err = d.Set("catalog_name", offering.CatalogName); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting catalog_name: %s", err))
 	}
+	if offering.Metadata != nil {
+		// TODO: handle Metadata of type TypeMap -- not primitive type, not list
+	}
 	if err = d.Set("disclaimer", offering.Disclaimer); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting disclaimer: %s", err))
 	}
 	if err = d.Set("hidden", offering.Hidden); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting hidden: %s", err))
 	}
+	// if err = d.Set("provider", offering.Provider); err != nil {
+	// 	return diag.FromErr(fmt.Errorf("Error setting provider: %s", err))
+	// }
 	if offering.ProviderInfo != nil {
 		providerInfoMap, err := resourceIBMCmOfferingProviderInfoToMap(offering.ProviderInfo)
 		if err != nil {
@@ -2898,7 +2943,7 @@ func resourceIBMCmOfferingRead(context context.Context, d *schema.ResourceData, 
 	if err = d.Set("rev", offering.Rev); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting rev: %s", err))
 	}
-	if err = d.Set("offering_identifier", offering.ID); err != nil {
+	if err = d.Set("offering_id", offering.ID); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting offering_id: %s", err))
 	}
 
@@ -2914,9 +2959,13 @@ func resourceIBMCmOfferingUpdate(context context.Context, d *schema.ResourceData
 	updateOfferingOptions := &catalogmanagementv1.UpdateOfferingOptions{}
 
 	getOfferingOptions := &catalogmanagementv1.GetOfferingOptions{}
+	parts, err := flex.SepIdParts(d.Id(), "/")
+	if err != nil {
+		return diag.FromErr(err)
+	}
 
-	getOfferingOptions.SetCatalogIdentifier(d.Get("catalog_id").(string))
-	getOfferingOptions.SetOfferingID(d.Id())
+	getOfferingOptions.SetCatalogIdentifier(parts[0])
+	getOfferingOptions.SetOfferingID(parts[1])
 	offering, response, err := catalogManagementClient.GetOfferingWithContext(context, getOfferingOptions)
 	if err != nil {
 		if response != nil && response.StatusCode == 404 {
@@ -3475,8 +3524,13 @@ func resourceIBMCmOfferingDelete(context context.Context, d *schema.ResourceData
 
 	deleteOfferingOptions := &catalogmanagementv1.DeleteOfferingOptions{}
 
-	deleteOfferingOptions.SetCatalogIdentifier(d.Get("catalog_id").(string))
-	deleteOfferingOptions.SetOfferingID(d.Id())
+	parts, err := flex.SepIdParts(d.Id(), "/")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	deleteOfferingOptions.SetCatalogIdentifier(parts[0])
+	deleteOfferingOptions.SetOfferingID(parts[1])
 
 	response, err := catalogManagementClient.DeleteOfferingWithContext(context, deleteOfferingOptions)
 	if err != nil {
@@ -3511,8 +3565,14 @@ func resourceIBMCmOfferingMapToFeature(modelMap map[string]interface{}) (*catalo
 	if modelMap["title"] != nil && modelMap["title"].(string) != "" {
 		model.Title = core.StringPtr(modelMap["title"].(string))
 	}
+	if modelMap["title_i18n"] != nil {
+		// TODO: handle TitleI18n, map with entry type ''
+	}
 	if modelMap["description"] != nil && modelMap["description"].(string) != "" {
 		model.Description = core.StringPtr(modelMap["description"].(string))
+	}
+	if modelMap["description_i18n"] != nil {
+		// TODO: handle DescriptionI18n, map with entry type ''
 	}
 	return model, nil
 }
@@ -3530,6 +3590,9 @@ func resourceIBMCmOfferingMapToKind(modelMap map[string]interface{}) (*catalogma
 	}
 	if modelMap["target_kind"] != nil && modelMap["target_kind"].(string) != "" {
 		model.TargetKind = core.StringPtr(modelMap["target_kind"].(string))
+	}
+	if modelMap["metadata"] != nil {
+		// TODO: handle Metadata, map with entry type ''
 	}
 	if modelMap["tags"] != nil {
 		tags := []string{}
@@ -3756,6 +3819,9 @@ func resourceIBMCmOfferingMapToVersion(modelMap map[string]interface{}) (*catalo
 	if modelMap["long_description"] != nil && modelMap["long_description"].(string) != "" {
 		model.LongDescription = core.StringPtr(modelMap["long_description"].(string))
 	}
+	if modelMap["long_description_i18n"] != nil {
+		// TODO: handle LongDescriptionI18n, map with entry type ''
+	}
 	if modelMap["whitelisted_accounts"] != nil {
 		whitelistedAccounts := []string{}
 		for _, whitelistedAccountsItem := range modelMap["whitelisted_accounts"].([]interface{}) {
@@ -3794,6 +3860,9 @@ func resourceIBMCmOfferingMapToFlavor(modelMap map[string]interface{}) (*catalog
 	if modelMap["label"] != nil && modelMap["label"].(string) != "" {
 		model.Label = core.StringPtr(modelMap["label"].(string))
 	}
+	if modelMap["label_i18n"] != nil {
+		// TODO: handle LabelI18n, map with entry type ''
+	}
 	if modelMap["index"] != nil {
 		model.Index = core.Int64Ptr(int64(modelMap["index"].(int)))
 	}
@@ -3823,6 +3892,14 @@ func resourceIBMCmOfferingMapToConfiguration(modelMap map[string]interface{}) (*
 	if modelMap["required"] != nil {
 		model.Required = core.BoolPtr(modelMap["required"].(bool))
 	}
+	// TODO: TypeMap undefined
+	// if modelMap["options"] != nil {
+	// 	options := []TypeMap{}
+	// 	for _, optionsItem := range modelMap["options"].([]interface{}) {
+	// 		options = append(options, optionsItem.(TypeMap))
+	// 	}
+	// 	model.Options = options
+	// }
 	if modelMap["hidden"] != nil {
 		model.Hidden = core.BoolPtr(modelMap["hidden"].(bool))
 	}
@@ -3852,6 +3929,9 @@ func resourceIBMCmOfferingMapToRenderType(modelMap map[string]interface{}) (*cat
 	}
 	if modelMap["grouping_index"] != nil {
 		model.GroupingIndex = core.Int64Ptr(int64(modelMap["grouping_index"].(int)))
+	}
+	if modelMap["config_constraints"] != nil {
+		// TODO: handle ConfigConstraints, map with entry type ''
 	}
 	if modelMap["associations"] != nil && len(modelMap["associations"].([]interface{})) > 0 {
 		AssociationsModel, err := resourceIBMCmOfferingMapToRenderTypeAssociations(modelMap["associations"].([]interface{})[0].(map[string]interface{}))
@@ -3959,6 +4039,9 @@ func resourceIBMCmOfferingMapToValidation(modelMap map[string]interface{}) (*cat
 	if modelMap["last_operation"] != nil && modelMap["last_operation"].(string) != "" {
 		model.LastOperation = core.StringPtr(modelMap["last_operation"].(string))
 	}
+	if modelMap["target"] != nil {
+		// TODO: handle Target, map with entry type ''
+	}
 	if modelMap["message"] != nil && modelMap["message"].(string) != "" {
 		model.Message = core.StringPtr(modelMap["message"].(string))
 	}
@@ -3980,6 +4063,9 @@ func resourceIBMCmOfferingMapToScript(modelMap map[string]interface{}) (*catalog
 	model := &catalogmanagementv1.Script{}
 	if modelMap["instructions"] != nil && modelMap["instructions"].(string) != "" {
 		model.Instructions = core.StringPtr(modelMap["instructions"].(string))
+	}
+	if modelMap["instructions_i18n"] != nil {
+		// TODO: handle InstructionsI18n, map with entry type ''
 	}
 	if modelMap["script"] != nil && modelMap["script"].(string) != "" {
 		model.Script = core.StringPtr(modelMap["script"].(string))
@@ -4131,6 +4217,9 @@ func resourceIBMCmOfferingMapToArchitectureDiagram(modelMap map[string]interface
 	if modelMap["description"] != nil && modelMap["description"].(string) != "" {
 		model.Description = core.StringPtr(modelMap["description"].(string))
 	}
+	if modelMap["description_i18n"] != nil {
+		// TODO: handle DescriptionI18n, map with entry type ''
+	}
 	return model, nil
 }
 
@@ -4151,6 +4240,9 @@ func resourceIBMCmOfferingMapToMediaItem(modelMap map[string]interface{}) (*cata
 	}
 	if modelMap["caption"] != nil && modelMap["caption"].(string) != "" {
 		model.Caption = core.StringPtr(modelMap["caption"].(string))
+	}
+	if modelMap["caption_i18n"] != nil {
+		// TODO: handle CaptionI18n, map with entry type ''
 	}
 	if modelMap["type"] != nil && modelMap["type"].(string) != "" {
 		model.Type = core.StringPtr(modelMap["type"].(string))
@@ -4227,6 +4319,9 @@ func resourceIBMCmOfferingMapToProject(modelMap map[string]interface{}) (*catalo
 	if modelMap["name"] != nil && modelMap["name"].(string) != "" {
 		model.Name = core.StringPtr(modelMap["name"].(string))
 	}
+	if modelMap["metadata"] != nil {
+		// TODO: handle Metadata, map with entry type ''
+	}
 	if modelMap["past_breakdown"] != nil && len(modelMap["past_breakdown"].([]interface{})) > 0 {
 		PastBreakdownModel, err := resourceIBMCmOfferingMapToCostBreakdown(modelMap["past_breakdown"].([]interface{})[0].(map[string]interface{}))
 		if err != nil {
@@ -4284,6 +4379,9 @@ func resourceIBMCmOfferingMapToCostResource(modelMap map[string]interface{}) (*c
 	model := &catalogmanagementv1.CostResource{}
 	if modelMap["name"] != nil && modelMap["name"].(string) != "" {
 		model.Name = core.StringPtr(modelMap["name"].(string))
+	}
+	if modelMap["metadata"] != nil {
+		// TODO: handle Metadata, map with entry type ''
 	}
 	if modelMap["hourly_cost"] != nil && modelMap["hourly_cost"].(string) != "" {
 		model.HourlyCost = core.StringPtr(modelMap["hourly_cost"].(string))
@@ -4348,6 +4446,12 @@ func resourceIBMCmOfferingMapToCostSummary(modelMap map[string]interface{}) (*ca
 	if modelMap["total_no_price_resources"] != nil {
 		model.TotalNoPriceResources = core.Int64Ptr(int64(modelMap["total_no_price_resources"].(int)))
 	}
+	if modelMap["unsupported_resource_counts"] != nil {
+		// TODO: handle UnsupportedResourceCounts, map with entry type ''
+	}
+	if modelMap["no_price_resource_counts"] != nil {
+		// TODO: handle NoPriceResourceCounts, map with entry type ''
+	}
 	return model, nil
 }
 
@@ -4391,6 +4495,9 @@ func resourceIBMCmOfferingMapToPlan(modelMap map[string]interface{}) (*catalogma
 	}
 	if modelMap["long_description"] != nil && modelMap["long_description"].(string) != "" {
 		model.LongDescription = core.StringPtr(modelMap["long_description"].(string))
+	}
+	if modelMap["metadata"] != nil {
+		// TODO: handle Metadata, map with entry type ''
 	}
 	if modelMap["tags"] != nil {
 		tags := []string{}
@@ -4446,6 +4553,9 @@ func resourceIBMCmOfferingMapToDeployment(modelMap map[string]interface{}) (*cat
 	}
 	if modelMap["long_description"] != nil && modelMap["long_description"].(string) != "" {
 		model.LongDescription = core.StringPtr(modelMap["long_description"].(string))
+	}
+	if modelMap["metadata"] != nil {
+		// TODO: handle Metadata, map with entry type ''
 	}
 	if modelMap["tags"] != nil {
 		tags := []string{}
@@ -4506,6 +4616,9 @@ func resourceIBMCmOfferingMapToSupport(modelMap map[string]interface{}) (*catalo
 	}
 	if modelMap["process"] != nil && modelMap["process"].(string) != "" {
 		model.Process = core.StringPtr(modelMap["process"].(string))
+	}
+	if modelMap["process_i18n"] != nil {
+		// TODO: handle ProcessI18n, map with entry type ''
 	}
 	if modelMap["locations"] != nil {
 		locations := []string{}
@@ -4640,8 +4753,14 @@ func resourceIBMCmOfferingMapToBadge(modelMap map[string]interface{}) (*catalogm
 	if modelMap["label"] != nil && modelMap["label"].(string) != "" {
 		model.Label = core.StringPtr(modelMap["label"].(string))
 	}
+	if modelMap["label_i18n"] != nil {
+		// TODO: handle LabelI18n, map with entry type ''
+	}
 	if modelMap["description"] != nil && modelMap["description"].(string) != "" {
 		model.Description = core.StringPtr(modelMap["description"].(string))
+	}
+	if modelMap["description_i18n"] != nil {
+		// TODO: handle DescriptionI18n, map with entry type ''
 	}
 	if modelMap["icon"] != nil && modelMap["icon"].(string) != "" {
 		model.Icon = core.StringPtr(modelMap["icon"].(string))
@@ -4717,8 +4836,14 @@ func resourceIBMCmOfferingFeatureToMap(model *catalogmanagementv1.Feature) (map[
 	if model.Title != nil {
 		modelMap["title"] = model.Title
 	}
+	if model.TitleI18n != nil {
+		// TODO: handle TitleI18n of type TypeMap -- container, not list
+	}
 	if model.Description != nil {
 		modelMap["description"] = model.Description
+	}
+	if model.DescriptionI18n != nil {
+		// TODO: handle DescriptionI18n of type TypeMap -- container, not list
 	}
 	return modelMap, nil
 }
@@ -4736,6 +4861,9 @@ func resourceIBMCmOfferingKindToMap(model *catalogmanagementv1.Kind) (map[string
 	}
 	if model.TargetKind != nil {
 		modelMap["target_kind"] = model.TargetKind
+	}
+	if model.Metadata != nil {
+		// TODO: handle Metadata of type TypeMap -- container, not list
 	}
 	if model.Tags != nil {
 		modelMap["tags"] = model.Tags
@@ -4967,6 +5095,9 @@ func resourceIBMCmOfferingVersionToMap(model *catalogmanagementv1.Version) (map[
 	if model.LongDescription != nil {
 		modelMap["long_description"] = model.LongDescription
 	}
+	if model.LongDescriptionI18n != nil {
+		// TODO: handle LongDescriptionI18n of type TypeMap -- container, not list
+	}
 	if model.WhitelistedAccounts != nil {
 		modelMap["whitelisted_accounts"] = model.WhitelistedAccounts
 	}
@@ -5000,6 +5131,9 @@ func resourceIBMCmOfferingFlavorToMap(model *catalogmanagementv1.Flavor) (map[st
 	}
 	if model.Label != nil {
 		modelMap["label"] = model.Label
+	}
+	if model.LabelI18n != nil {
+		// TODO: handle LabelI18n of type TypeMap -- container, not list
 	}
 	if model.Index != nil {
 		modelMap["index"] = flex.IntValue(model.Index)
@@ -5066,6 +5200,9 @@ func resourceIBMCmOfferingRenderTypeToMap(model *catalogmanagementv1.RenderType)
 	}
 	if model.GroupingIndex != nil {
 		modelMap["grouping_index"] = flex.IntValue(model.GroupingIndex)
+	}
+	if model.ConfigConstraints != nil {
+		// TODO: handle ConfigConstraints of type TypeMap -- container, not list
 	}
 	if model.Associations != nil {
 		associationsMap, err := resourceIBMCmOfferingRenderTypeAssociationsToMap(model.Associations)
@@ -5165,6 +5302,9 @@ func resourceIBMCmOfferingValidationToMap(model *catalogmanagementv1.Validation)
 	if model.LastOperation != nil {
 		modelMap["last_operation"] = model.LastOperation
 	}
+	if model.Target != nil {
+		// TODO: handle Target of type TypeMap -- container, not list
+	}
 	if model.Message != nil {
 		modelMap["message"] = model.Message
 	}
@@ -5186,6 +5326,9 @@ func resourceIBMCmOfferingScriptToMap(model *catalogmanagementv1.Script) (map[st
 	modelMap := make(map[string]interface{})
 	if model.Instructions != nil {
 		modelMap["instructions"] = model.Instructions
+	}
+	if model.InstructionsI18n != nil {
+		// TODO: handle InstructionsI18n of type TypeMap -- container, not list
 	}
 	if model.Script != nil {
 		modelMap["script"] = model.Script
@@ -5333,6 +5476,9 @@ func resourceIBMCmOfferingArchitectureDiagramToMap(model *catalogmanagementv1.Ar
 	if model.Description != nil {
 		modelMap["description"] = model.Description
 	}
+	if model.DescriptionI18n != nil {
+		// TODO: handle DescriptionI18n of type TypeMap -- container, not list
+	}
 	return modelMap, nil
 }
 
@@ -5353,6 +5499,9 @@ func resourceIBMCmOfferingMediaItemToMap(model *catalogmanagementv1.MediaItem) (
 	}
 	if model.Caption != nil {
 		modelMap["caption"] = model.Caption
+	}
+	if model.CaptionI18n != nil {
+		// TODO: handle CaptionI18n of type TypeMap -- container, not list
 	}
 	if model.Type != nil {
 		modelMap["type"] = model.Type
@@ -5429,6 +5578,9 @@ func resourceIBMCmOfferingProjectToMap(model *catalogmanagementv1.Project) (map[
 	if model.Name != nil {
 		modelMap["name"] = model.Name
 	}
+	if model.Metadata != nil {
+		// TODO: handle Metadata of type TypeMap -- container, not list
+	}
 	if model.PastBreakdown != nil {
 		pastBreakdownMap, err := resourceIBMCmOfferingCostBreakdownToMap(model.PastBreakdown)
 		if err != nil {
@@ -5486,6 +5638,9 @@ func resourceIBMCmOfferingCostResourceToMap(model *catalogmanagementv1.CostResou
 	modelMap := make(map[string]interface{})
 	if model.Name != nil {
 		modelMap["name"] = model.Name
+	}
+	if model.Metadata != nil {
+		// TODO: handle Metadata of type TypeMap -- container, not list
 	}
 	if model.HourlyCost != nil {
 		modelMap["hourly_cost"] = model.HourlyCost
@@ -5550,6 +5705,12 @@ func resourceIBMCmOfferingCostSummaryToMap(model *catalogmanagementv1.CostSummar
 	if model.TotalNoPriceResources != nil {
 		modelMap["total_no_price_resources"] = flex.IntValue(model.TotalNoPriceResources)
 	}
+	if model.UnsupportedResourceCounts != nil {
+		// TODO: handle UnsupportedResourceCounts of type TypeMap -- container, not list
+	}
+	if model.NoPriceResourceCounts != nil {
+		// TODO: handle NoPriceResourceCounts of type TypeMap -- container, not list
+	}
 	return modelMap, nil
 }
 
@@ -5589,6 +5750,9 @@ func resourceIBMCmOfferingPlanToMap(model *catalogmanagementv1.Plan) (map[string
 	}
 	if model.LongDescription != nil {
 		modelMap["long_description"] = model.LongDescription
+	}
+	if model.Metadata != nil {
+		// TODO: handle Metadata of type TypeMap -- container, not list
 	}
 	if model.Tags != nil {
 		modelMap["tags"] = model.Tags
@@ -5640,6 +5804,9 @@ func resourceIBMCmOfferingDeploymentToMap(model *catalogmanagementv1.Deployment)
 	}
 	if model.LongDescription != nil {
 		modelMap["long_description"] = model.LongDescription
+	}
+	if model.Metadata != nil {
+		// TODO: handle Metadata of type TypeMap -- container, not list
 	}
 	if model.Tags != nil {
 		modelMap["tags"] = model.Tags
@@ -5696,6 +5863,9 @@ func resourceIBMCmOfferingSupportToMap(model *catalogmanagementv1.Support) (map[
 	}
 	if model.Process != nil {
 		modelMap["process"] = model.Process
+	}
+	if model.ProcessI18n != nil {
+		// TODO: handle ProcessI18n of type TypeMap -- container, not list
 	}
 	if model.Locations != nil {
 		modelMap["locations"] = model.Locations
@@ -5826,8 +5996,14 @@ func resourceIBMCmOfferingBadgeToMap(model *catalogmanagementv1.Badge) (map[stri
 	if model.Label != nil {
 		modelMap["label"] = model.Label
 	}
+	if model.LabelI18n != nil {
+		// TODO: handle LabelI18n of type TypeMap -- container, not list
+	}
 	if model.Description != nil {
 		modelMap["description"] = model.Description
+	}
+	if model.DescriptionI18n != nil {
+		// TODO: handle DescriptionI18n of type TypeMap -- container, not list
 	}
 	if model.Icon != nil {
 		modelMap["icon"] = model.Icon

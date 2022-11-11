@@ -76,12 +76,10 @@ func TestAccIBMContainerVpcClusterBasic(t *testing.T) {
 		},
 	})
 }
-
 func TestAccIBMContainerOpenshiftClusterBasic(t *testing.T) {
 	name := fmt.Sprintf("tf-vpc-cluster-%d", acctest.RandIntRange(10, 100))
 	openshiftFlavour := "bx2.16x64"
 	openShiftworkerCount := "2"
-	operatingSystem := "REDHAT_7_64"
 	var conf *v2.ClusterInfo
 
 	resource.Test(t, resource.TestCase{
@@ -90,7 +88,7 @@ func TestAccIBMContainerOpenshiftClusterBasic(t *testing.T) {
 		CheckDestroy: testAccCheckIBMContainerVpcClusterDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccCheckIBMContainerOcpClusterBasic(name, openshiftFlavour, openShiftworkerCount, operatingSystem),
+				Config: testAccCheckIBMContainerOcpClusterBasic(name, openshiftFlavour, openShiftworkerCount),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckIBMContainerVpcExists("ibm_container_vpc_cluster.cluster", conf),
 					resource.TestCheckResourceAttr(
@@ -334,47 +332,48 @@ resource "ibm_container_vpc_cluster" "cluster" {
 	
   }`, name)
 }
-func testAccCheckIBMContainerOcpClusterBasic(name, openshiftFlavour, openShiftworkerCount, operatingSystem string) string {
-	vpcName := "<test-vpc-name>"
-	subnetName := "<test-subnet-name>"
-	cosInstanceName := "<test-cos-name>"
+func testAccCheckIBMContainerOcpClusterBasic(name, openshiftFlavour, openShiftworkerCount string) string {
 	return fmt.Sprintf(`
 provider "ibm" {
-	region="us-south"
-}
+	region="eu-de"
+}	
 data "ibm_resource_group" "resource_group" {
-	is_default=true
+	is_default = "true"
 }
-data "ibm_is_vpc" "vpc" {
-	name = "%s"
+resource "ibm_is_vpc" "vpc1" {
+	name = "%[1]s"
 }
-
-data "ibm_is_subnet" "subnet" {
-	name                     = "%s"
+resource "ibm_is_subnet" "subnet" {
+	name                     = "%[1]s"
+	vpc                      = "${ibm_is_vpc.vpc1.id}"
+	zone                     = "eu-de-1"
+	total_ipv4_address_count = 256
 }
-data "ibm_resource_instance" "cos_instance" {
-	name     = "%s"
+resource "ibm_resource_instance" "cos_instance" {
+	name     = "testcos_instance"
+	service  = "cloud-object-storage"
+	plan     = "standard"
+	location = "global"
 }
 resource "ibm_container_vpc_cluster" "cluster" {
-	name              = "%s"
-	vpc_id            = data.ibm_is_vpc.vpc.id
+	name              = "%[1]s"
+	vpc_id            = "${ibm_is_vpc.vpc1.id}"
 	flavor            = "%s"
 	worker_count      = "%s"
-	kube_version      = "4.11_openshift"
- 	operating_system  = "%s"
-	wait_till         = "OneWorkerNodeReady"
+	kube_version 	  = "4.3.23_openshift"
+	wait_till         = "IngressReady"
 	entitlement       = "cloud_pak"
-	cos_instance_crn  = data.ibm_resource_instance.cos_instance.id
+	cos_instance_crn  = ibm_resource_instance.cos_instance.id
 	resource_group_id = data.ibm_resource_group.resource_group.id
 	zones {
-		 subnet_id = data.ibm_is_subnet.subnet.id
-		 name      = "us-south-1"
+		 subnet_id = ibm_is_subnet.subnet.id
+		 name      = "eu-de-1"
 	  }
   }
   data "ibm_container_cluster_config" "testacc_ds_cluster" {
 	cluster_name_id = ibm_container_vpc_cluster.cluster.id
   }
-  `, vpcName, subnetName, cosInstanceName, name, openshiftFlavour, openShiftworkerCount, operatingSystem)
+  `, name, openshiftFlavour, openShiftworkerCount)
 
 }
 
@@ -444,11 +443,8 @@ func TestAccIBMContainerVpcClusterEnvvar(t *testing.T) {
 // export IBM_CLUSTER_VPC_ID
 // export IBM_CLUSTER_VPC_SUBNET_ID
 // export IBM_CLUSTER_VPC_RESOURCE_GROUP_ID
-// optionally for kms and cross account kms:
 // export IBM_KMS_INSTANCE_ID
 // export IBM_CRK_ID
-// for cross account kms:
-// export IBM_KMS_ACCOUNT_ID
 // for acc.IksClusterVpcID, acc.IksClusterResourceGroupID, acc.IksClusterSubnetID, acc.KmsInstanceID, acc.CrkID
 func testAccCheckIBMContainerVpcClusterEnvvar(name string) string {
 	config := fmt.Sprintf(`
@@ -462,12 +458,10 @@ func testAccCheckIBMContainerVpcClusterEnvvar(name string) string {
 			subnet_id = "%[4]s"
 			name      = "us-south-1"
 		}
-		wait_till = "normal"
 		kms_instance_id = "%[5]s"
 		crk = "%[6]s"
-		kms_account_id = "%[7]s"
 	}
-	`, name, acc.IksClusterVpcID, acc.IksClusterResourceGroupID, acc.IksClusterSubnetID, acc.KmsInstanceID, acc.CrkID, acc.KmsAccountID)
+	`, name, acc.IksClusterVpcID, acc.IksClusterResourceGroupID, acc.IksClusterSubnetID, acc.KmsInstanceID, acc.CrkID)
 	fmt.Println(config)
 	return config
 }

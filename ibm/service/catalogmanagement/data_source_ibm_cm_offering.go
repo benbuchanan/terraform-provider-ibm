@@ -21,17 +21,17 @@ func DataSourceIBMCmOffering() *schema.Resource {
 		ReadContext: dataSourceIBMCmOfferingRead,
 
 		Schema: map[string]*schema.Schema{
-			"catalog_id": &schema.Schema{
+			"catalog_identifier": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
 				Description: "Catalog identifier.",
 			},
-			"offering_id": &schema.Schema{
+			"offering_identifier": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
 				ForceNew:    true,
-				Description: "Offering identifier.",
+				Description: "Offering identifier.  Provide this when an offering already exists and you wish to use it as a terraform resource.",
 			},
 			"url": &schema.Schema{
 				Type:        schema.TypeString,
@@ -1917,6 +1917,11 @@ func DataSourceIBMCmOffering() *schema.Resource {
 				Computed:    true,
 				Description: "The portal UI URL.",
 			},
+			"catalog_id": &schema.Schema{
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "The id of the catalog containing this offering.",
+			},
 			"catalog_name": &schema.Schema{
 				Type:        schema.TypeString,
 				Computed:    true,
@@ -2356,10 +2361,10 @@ func DataSourceIBMCmOffering() *schema.Resource {
 				Computed:    true,
 				Description: "Cloudant revision.",
 			},
-			"offering_identifier": &schema.Schema{
+			"offering_id": &schema.Schema{
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Computed Offering ID.",
+				Description: "unique id.",
 			},
 		},
 	}
@@ -2373,8 +2378,8 @@ func dataSourceIBMCmOfferingRead(context context.Context, d *schema.ResourceData
 
 	getOfferingOptions := &catalogmanagementv1.GetOfferingOptions{}
 
-	getOfferingOptions.SetCatalogIdentifier(d.Get("catalog_id").(string))
-	getOfferingOptions.SetOfferingID(d.Get("offering_id").(string))
+	getOfferingOptions.SetCatalogIdentifier(d.Get("catalog_identifier").(string))
+	getOfferingOptions.SetOfferingID(d.Get("offering_identifier").(string))
 
 	offering, response, err := catalogManagementClient.GetOfferingWithContext(context, getOfferingOptions)
 	if err != nil {
@@ -2382,13 +2387,13 @@ func dataSourceIBMCmOfferingRead(context context.Context, d *schema.ResourceData
 		return diag.FromErr(fmt.Errorf("GetOfferingWithContext failed %s\n%s", err, response))
 	}
 
-	d.SetId(*getOfferingOptions.OfferingID)
+	d.SetId(fmt.Sprintf("%s/%s", *getOfferingOptions.CatalogIdentifier, *getOfferingOptions.OfferingID))
 
 	if err = d.Set("rev", offering.Rev); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting rev: %s", err))
 	}
 
-	if err = d.Set("offering_identifier", offering.ID); err != nil {
+	if err = d.Set("offering_id", offering.ID); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting rev: %s", err))
 	}
 

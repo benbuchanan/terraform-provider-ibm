@@ -1,14 +1,14 @@
 resource "ibm_cd_toolchain_tool_hostedgit" "app_repo" {
   toolchain_id = var.toolchain_id
-  name         = "repo"
+  name         = "app-repo"
   initialization {
-    type = "clone_if_not_exists"
+    type = "clone"
     source_repo_url = var.app_repo
     private_repo = true
     repo_name = join("-", [ var.repositories_prefix, "app-repo" ])
   }  
   parameters {
-    toolchain_issues_enabled = true
+    has_issues          = true
     enable_traceability = true
   }
 }
@@ -17,13 +17,13 @@ resource "ibm_cd_toolchain_tool_hostedgit" "pipeline_repo" {
   toolchain_id = var.toolchain_id
   name         = "pipeline-repo"  
   initialization {
-    type = "clone_if_not_exists"
+    type = "clone"
     repo_url = var.pipeline_repo
     private_repo = true
     repo_name = join("-", [ var.repositories_prefix, "pipeline-repo" ])
   }
   parameters {
-    toolchain_issues_enabled = false
+    has_issues          = false
     enable_traceability = false
   }
 }
@@ -32,13 +32,13 @@ resource "ibm_cd_toolchain_tool_hostedgit" "tekton_tasks_catalog_repo" {
   toolchain_id = var.toolchain_id
   name         = "tasks-repo"
   initialization {
-    type = "clone_if_not_exists"
+    type = "clone"
     repo_url = var.tekton_tasks_catalog_repo
     private_repo = true
     repo_name = join("-", [ var.repositories_prefix, "tasks-repo" ])
   }
   parameters {
-    toolchain_issues_enabled = false
+    has_issues          = false
     enable_traceability = false
   }
 }

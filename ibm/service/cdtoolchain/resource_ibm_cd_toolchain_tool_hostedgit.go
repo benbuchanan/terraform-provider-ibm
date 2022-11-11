@@ -38,81 +38,76 @@ func ResourceIBMCdToolchainToolHostedgit() *schema.Resource {
 				MinItems:    1,
 				MaxItems:    1,
 				Required:    true,
-				Description: "Unique key-value pairs representing parameters to be used to create the tool. A list of parameters for each tool integration can be found in the <a href=\"https://cloud.ibm.com/docs/ContinuousDelivery?topic=ContinuousDelivery-integrations\">Configuring tool integrations page</a>.",
+				Description: "Unique key-value pairs representing parameters to be used to create the tool.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"git_id": &schema.Schema{
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "Set this value to 'hostedgit' to target Git Repos and Issue Tracking.",
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
 						},
 						"api_root_url": &schema.Schema{
 							Type:        schema.TypeString,
+							Optional:    true,
 							Computed:    true,
-							Description: "The API root URL for the GitLab server.",
-						},
-						"default_branch": &schema.Schema{
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "The default branch of the git repository.",
+							Description: "e.g. https://gitlab.example.com/api/v4.",
 						},
 						"owner_id": &schema.Schema{
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "The GitLab user or group that owns the repository.  This parameter is required when creating a new repository, cloning, or forking a repository.  The value will be computed when linking to an existing repository.",
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
 						},
 						"repo_name": &schema.Schema{
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "The name of the new GitLab repository to create.  This parameter is required when creating a new repository, cloning, or forking a repository.  The value will be computed when linking to an existing repository.",
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
 						},
 						"repo_url": &schema.Schema{
 							Type:        schema.TypeString,
+							Optional:    true,
 							Computed:    true,
-							Description: "The URL of the GitLab repository for this tool integration.  This parameter is required when linking to an existing repository.  The value will be computed when creating a new repository, cloning, or forking a repository.",
+							Description: "Type the URL of the repository that you are linking to.",
 						},
 						"source_repo_url": &schema.Schema{
 							Type:        schema.TypeString,
+							Optional:    true,
 							Computed:    true,
-							Description: "The URL of the repository that you are forking or cloning.  This parameter is required when forking or cloning a repository.  It is not used when creating a new repository or linking to an existing repository.",
+							Description: "Type the URL of the repository that you are forking or cloning.",
 						},
 						"token_url": &schema.Schema{
 							Type:        schema.TypeString,
+							Optional:    true,
 							Computed:    true,
-							Description: "The token URL used for authorizing with the Bitbucket server.",
+							Description: "Integration token URL.",
 						},
 						"type": &schema.Schema{
-							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "The operation that should be performed to initialize the new tool integration.  Use 'new' to create a new git repository, 'clone' to clone an existing repository into a new git repository, 'fork' to fork an existing git repository, or 'link' to link to an existing git repository.",
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
 						},
 						"private_repo": &schema.Schema{
 							Type:        schema.TypeBool,
+							Optional:    true,
 							Computed:    true,
-							Description: "Set this value to 'true' to make the repository private when creating a new repository or when cloning or forking a repository.  This parameter is not used when linking to an existing repository.",
+							Description: "Select this check box to make this repository private.",
+						},
+						"has_issues": &schema.Schema{
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     true,
+							Description: "Select this check box to enable Issues for lightweight issue tracking.",
 						},
 						"enable_traceability": &schema.Schema{
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     false,
-							Description: "Set this value to 'true' to track the deployment of code changes by creating tags, labels and comments on commits, pull requests and referenced issues.",
+							Description: "Select this check box to track the deployment of code changes by creating tags, labels and comments on commits, pull requests and referenced issues.",
 						},
 						"integration_owner": &schema.Schema{
-							Type:             schema.TypeString,
-							Optional:         true,
-							DiffSuppressFunc: flex.SuppressAllowBlank,
-							Description:      "Select the user which git operations will be performed as.",
-						},
-						"repo_id": &schema.Schema{
 							Type:        schema.TypeString,
-							Computed:    true,
-							Description: "The ID of the Git Repos and Issue Tracking project.",
-						},
-						"toolchain_issues_enabled": &schema.Schema{
-							Type:        schema.TypeBool,
 							Optional:    true,
-							Default:     true,
-							Description: "Setting this value to true will enable issues on the GitLab repository and add an issues tool card to the toolchain.  Setting the value to false will remove the tool card from the toolchain, but will not impact whether or not issues are enabled on the GitLab repository itself.",
+							Computed:    true,
+							Description: "Select the user which git operations will be performed as.",
 						},
 					},
 				},
@@ -124,48 +119,39 @@ func ResourceIBMCdToolchainToolHostedgit() *schema.Resource {
 				Required: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"git_id": &schema.Schema{
-							Type:        schema.TypeString,
-							Optional:    true,
-							ForceNew:    true,
-							Description: "Set this value to 'hostedgit' to target Git Repos and Issue Tracking.",
-						},
 						"owner_id": &schema.Schema{
-							Type:        schema.TypeString,
-							Optional:    true,
-							ForceNew:    true,
-							Description: "The GitLab user or group that owns the repository.  This parameter is required when creating a new repository, cloning, or forking a repository.  The value will be computed when linking to an existing repository.",
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
 						},
 						"repo_name": &schema.Schema{
-							Type:        schema.TypeString,
-							Optional:    true,
-							ForceNew:    true,
-							Description: "The name of the new GitLab repository to create.  This parameter is required when creating a new repository, cloning, or forking a repository.  The value will be computed when linking to an existing repository.",
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
 						},
 						"repo_url": &schema.Schema{
 							Type:        schema.TypeString,
 							Optional:    true,
 							ForceNew:    true,
-							Description: "The URL of the GitLab repository for this tool integration.  This parameter is required when linking to an existing repository.  The value will be computed when creating a new repository, cloning, or forking a repository.",
+							Description: "Type the URL of the repository that you are linking to.",
 						},
 						"source_repo_url": &schema.Schema{
 							Type:        schema.TypeString,
 							Optional:    true,
 							ForceNew:    true,
-							Description: "The URL of the repository that you are forking or cloning.  This parameter is required when forking or cloning a repository.  It is not used when creating a new repository or linking to an existing repository.",
+							Description: "Type the URL of the repository that you are forking or cloning.",
 						},
 						"type": &schema.Schema{
-							Type:        schema.TypeString,
-							Required:    true,
-							ForceNew:    true,
-							Description: "The operation that should be performed to initialize the new tool integration.  Use 'new' to create a new git repository, 'clone' to clone an existing repository into a new git repository, 'fork' to fork an existing git repository, or 'link' to link to an existing git repository.",
+							Type:     schema.TypeString,
+							Required: true,
+							ForceNew: true,
 						},
 						"private_repo": &schema.Schema{
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     true,
 							ForceNew:    true,
-							Description: "Set this value to 'true' to make the repository private when creating a new repository or when cloning or forking a repository.  This parameter is not used when linking to an existing repository.",
+							Description: "Select this check box to make this repository private.",
 						},
 					},
 				},
@@ -174,12 +160,12 @@ func ResourceIBMCdToolchainToolHostedgit() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validate.InvokeValidator("ibm_cd_toolchain_tool_hostedgit", "name"),
-				Description:  "Name of the tool.",
+				Description:  "Name of tool.",
 			},
 			"resource_group_id": &schema.Schema{
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Resource group where the tool is located.",
+				Description: "Resource group where tool can be found.",
 			},
 			"crn": &schema.Schema{
 				Type:        schema.TypeString,
@@ -205,12 +191,12 @@ func ResourceIBMCdToolchainToolHostedgit() *schema.Resource {
 						"ui_href": &schema.Schema{
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: "URI representing this resource through the UI.",
+							Description: "URI representing the this resource through the UI.",
 						},
 						"api_href": &schema.Schema{
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: "URI representing this resource through an API.",
+							Description: "URI representing the this resource through an API.",
 						},
 					},
 				},
@@ -271,10 +257,7 @@ func resourceIBMCdToolchainToolHostedgitCreate(context context.Context, d *schem
 
 	createToolOptions.SetToolchainID(d.Get("toolchain_id").(string))
 	createToolOptions.SetToolTypeID("hostedgit")
-	remapFields := map[string]string{
-		"toolchain_issues_enabled": "has_issues",
-	}
-	parametersModel := GetParametersForCreate(d, ResourceIBMCdToolchainToolHostedgit(), remapFields)
+	parametersModel := GetParametersForCreate(d, ResourceIBMCdToolchainToolHostedgit(), nil)
 	createToolOptions.SetParameters(parametersModel)
 	if _, ok := d.GetOk("name"); ok {
 		createToolOptions.SetName(d.Get("name").(string))
@@ -320,10 +303,7 @@ func resourceIBMCdToolchainToolHostedgitRead(context context.Context, d *schema.
 	if err = d.Set("toolchain_id", toolchainTool.ToolchainID); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting toolchain_id: %s", err))
 	}
-	remapFields := map[string]string{
-		"toolchain_issues_enabled": "has_issues",
-	}
-	parametersMap := GetParametersFromRead(toolchainTool.Parameters, ResourceIBMCdToolchainToolHostedgit(), remapFields)
+	parametersMap := GetParametersFromRead(toolchainTool.Parameters, ResourceIBMCdToolchainToolHostedgit(), nil)
 	if err = d.Set("parameters", []map[string]interface{}{parametersMap}); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting parameters: %s", err))
 	}
@@ -386,10 +366,7 @@ func resourceIBMCdToolchainToolHostedgitUpdate(context context.Context, d *schem
 			" The resource must be re-created to update this property.", "toolchain_id"))
 	}
 	if d.HasChange("parameters") {
-		remapFields := map[string]string{
-			"toolchain_issues_enabled": "has_issues",
-		}
-		parameters := GetParametersForUpdate(d, ResourceIBMCdToolchainToolHostedgit(), remapFields)
+		parameters := GetParametersForUpdate(d, ResourceIBMCdToolchainToolHostedgit(), nil)
 		patchVals.Parameters = parameters
 		hasChange = true
 	}

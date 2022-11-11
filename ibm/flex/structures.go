@@ -23,12 +23,10 @@ import (
 	"github.com/IBM-Cloud/bluemix-go/models"
 	"github.com/IBM-Cloud/container-services-go-sdk/kubernetesserviceapiv1"
 	"github.com/IBM-Cloud/terraform-provider-ibm/ibm/conns"
-	"github.com/IBM/cloud-databases-go-sdk/clouddatabasesv5"
 	"github.com/IBM/go-sdk-core/v5/core"
 	"github.com/IBM/ibm-cos-sdk-go-config/resourceconfigurationv1"
 	"github.com/IBM/ibm-cos-sdk-go/service/s3"
 	kp "github.com/IBM/keyprotect-go-client"
-	"github.com/IBM/platform-services-go-sdk/globalsearchv2"
 	"github.com/IBM/platform-services-go-sdk/globaltaggingv1"
 	"github.com/IBM/platform-services-go-sdk/iampolicymanagementv1"
 	rg "github.com/IBM/platform-services-go-sdk/resourcemanagerv2"
@@ -349,15 +347,14 @@ func FlattenVpcWorkerPools(list []containerv2.GetWorkerPoolResponse) []map[strin
 	workerPools := make([]map[string]interface{}, len(list))
 	for i, workerPool := range list {
 		l := map[string]interface{}{
-			"id":               workerPool.ID,
-			"name":             workerPool.PoolName,
-			"flavor":           workerPool.Flavor,
-			"worker_count":     workerPool.WorkerCount,
-			"isolation":        workerPool.Isolation,
-			"labels":           workerPool.Labels,
-			"operating_system": workerPool.OperatingSystem,
-			"state":            workerPool.Lifecycle.ActualState,
-			"host_pool_id":     workerPool.HostPoolID,
+			"id":           workerPool.ID,
+			"name":         workerPool.PoolName,
+			"flavor":       workerPool.Flavor,
+			"worker_count": workerPool.WorkerCount,
+			"isolation":    workerPool.Isolation,
+			"labels":       workerPool.Labels,
+			"state":        workerPool.Lifecycle.ActualState,
+			"host_pool_id": workerPool.HostPoolID,
 		}
 		zones := workerPool.Zones
 		zonesConfig := make([]map[string]interface{}, len(zones))
@@ -1655,19 +1652,6 @@ func ExpandWhitelist(whiteList *schema.Set) (whitelist []icdv4.WhitelistEntry) {
 	return
 }
 
-// IBM Cloud Databases
-func ExpandAllowlist(allowList *schema.Set) (allowlist []clouddatabasesv5.AllowlistEntry) {
-	for _, iface := range allowList.List() {
-		alItem := iface.(map[string]interface{})
-		alEntry := &clouddatabasesv5.AllowlistEntry{
-			Address:     core.StringPtr(alItem["address"].(string)),
-			Description: core.StringPtr(alItem["description"].(string)),
-		}
-		allowlist = append(allowlist, *alEntry)
-	}
-	return
-}
-
 // Cloud Internet Services
 func FlattenWhitelist(whitelist icdv4.Whitelist) []map[string]interface{} {
 	entries := make([]map[string]interface{}, len(whitelist.WhitelistEntrys), len(whitelist.WhitelistEntrys))
@@ -1675,19 +1659,6 @@ func FlattenWhitelist(whitelist icdv4.Whitelist) []map[string]interface{} {
 		l := map[string]interface{}{
 			"address":     whitelistEntry.Address,
 			"description": whitelistEntry.Description,
-		}
-		entries[i] = l
-	}
-	return entries
-}
-
-// Cloud Internet Services
-func FlattenGetAllowlist(allowlist clouddatabasesv5.GetAllowlistResponse) []map[string]interface{} {
-	entries := make([]map[string]interface{}, len(allowlist.IPAddresses), len(allowlist.IPAddresses))
-	for i, allowlistEntry := range allowlist.IPAddresses {
-		l := map[string]interface{}{
-			"address":     allowlistEntry.Address,
-			"description": allowlistEntry.Description,
 		}
 		entries[i] = l
 	}
@@ -2024,13 +1995,17 @@ func GetGlobalTagsUsingCRN(meta interface{}, resourceID, resourceType, tagType s
 		return nil, err
 	}
 	accountID := userDetails.UserAccount
+
+	var providers []string
+	if strings.Contains(resourceType, "SoftLayer_") {
+		providers = []string{"ims"}
+	}
+
 	ListTagsOptions := &globaltaggingv1.ListTagsOptions{}
 	if resourceID != "" {
 		ListTagsOptions.AttachedTo = &resourceID
 	}
-	if strings.HasPrefix(resourceType, "Softlayer_") {
-		ListTagsOptions.Providers = []string{"ims"}
-	}
+	ListTagsOptions.Providers = providers
 	if len(tagType) > 0 {
 		ListTagsOptions.TagType = PtrToString(tagType)
 
@@ -2040,13 +2015,6 @@ func GetGlobalTagsUsingCRN(meta interface{}, resourceID, resourceType, tagType s
 	}
 	taggingResult, _, err := gtClient.ListTags(ListTagsOptions)
 	if err != nil {
-		if strings.Contains(err.Error(), "Too Many Requests") {
-			temp, err := GetGlobalTagsUsingSearchAPI(meta, resourceID, resourceType, tagType)
-			if err != nil {
-				return nil, err
-			}
-			return temp, nil
-		}
 		return nil, err
 	}
 	var taglist []string
@@ -2054,56 +2022,6 @@ func GetGlobalTagsUsingCRN(meta interface{}, resourceID, resourceType, tagType s
 		taglist = append(taglist, *item.Name)
 	}
 	log.Println("tagList: ", taglist)
-	return NewStringSet(ResourceIBMVPCHash, taglist), nil
-}
-
-func GetGlobalTagsUsingSearchAPI(meta interface{}, resourceID, resourceType, tagType string) (*schema.Set, error) {
-
-	gsClient, err := meta.(conns.ClientSession).GlobalSearchAPIV2()
-	if err != nil {
-		return nil, fmt.Errorf("[ERROR] Error getting global search client settings: %s", err)
-	}
-	options := globalsearchv2.SearchOptions{}
-	var query string
-	if strings.Contains(resourceType, "SoftLayer_") {
-		query = fmt.Sprintf("doc.id:%s AND family:ims", resourceID)
-		options.SetQuery(query)
-	} else {
-		query = fmt.Sprintf("crn:\"%s\"", resourceID)
-		options.SetQuery(query)
-	}
-	if tagType == "service" {
-		userDetails, err := meta.(conns.ClientSession).BluemixUserDetails()
-		if err != nil {
-			return nil, err
-		}
-		options.SetAccountID(userDetails.UserAccount)
-	}
-	options.SetFields([]string{"access_tags", "tags", "service_tags"})
-	result, resp, err := gsClient.Search(&options)
-	if err != nil {
-		return nil, fmt.Errorf("[ERROR] Error to query the tags for the resource: %s %s", err, resp)
-	}
-	var taglist []string
-	var t interface{}
-	if len(result.Items) > 0 {
-		if tagType == "access" {
-			t = result.Items[0].GetProperty("access_tags")
-		} else if tagType == "service" {
-			t = result.Items[0].GetProperty("service_tags")
-		} else {
-			t = result.Items[0].GetProperty("tags")
-		}
-		switch reflect.TypeOf(t).Kind() {
-		case reflect.Slice:
-			s := reflect.ValueOf(t)
-
-			for i := 0; i < s.Len(); i++ {
-				t := fmt.Sprintf("%s", (s.Index(i)))
-				taglist = append(taglist, t)
-			}
-		}
-	}
 	return NewStringSet(ResourceIBMVPCHash, taglist), nil
 }
 
@@ -2217,22 +2135,15 @@ func GetTagsUsingCRN(meta interface{}, resourceCRN string) (*schema.Set, error) 
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Error getting global tagging client settings: %s", err)
 	}
-	var taglist []string
 	taggingResult, err := gtClient.Tags().GetTags(resourceCRN)
 	if err != nil {
-		if strings.Contains(err.Error(), "Too Many Requests") {
-			temp, err := GetGlobalTagsUsingSearchAPI(meta, resourceCRN, "", "user")
-			if err != nil {
-				return nil, err
-			}
-			return temp, nil
-		}
 		return nil, err
 	}
-
+	var taglist []string
 	for _, item := range taggingResult.Items {
 		taglist = append(taglist, item.Name)
 	}
+	log.Println("tagList: ", taglist)
 	return NewStringSet(ResourceIBMVPCHash, taglist), nil
 }
 
@@ -2717,7 +2628,6 @@ func FlattenKeyPolicies(policies []kp.Policy) []map[string]interface{} {
 		}
 		if policy.Rotation != nil {
 			policyInstance["interval_month"] = policy.Rotation.Interval
-			policyInstance["enabled"] = *policy.Rotation.Enabled
 			rotationMap = append(rotationMap, policyInstance)
 		} else if policy.DualAuth != nil {
 			policyInstance["enabled"] = *(policy.DualAuth.Enabled)
@@ -2736,6 +2646,7 @@ func FlattenKeyIndividualPolicy(policy string, policies []kp.Policy) []map[strin
 	rotationMap := make([]map[string]interface{}, 0, 1)
 	dualAuthMap := make([]map[string]interface{}, 0, 1)
 	for _, policy := range policies {
+		log.Println("Policy CRN Data =============>", policy.CRN)
 		policyCRNData := strings.Split(policy.CRN, ":")
 		policyInstance := map[string]interface{}{
 			"id":               policyCRNData[9],
@@ -2747,7 +2658,6 @@ func FlattenKeyIndividualPolicy(policy string, policies []kp.Policy) []map[strin
 		}
 		if policy.Rotation != nil {
 			policyInstance["interval_month"] = policy.Rotation.Interval
-			policyInstance["enabled"] = *policy.Rotation.Enabled
 			rotationMap = append(rotationMap, policyInstance)
 		} else if policy.DualAuth != nil {
 			policyInstance["enabled"] = *(policy.DualAuth.Enabled)
@@ -2758,55 +2668,6 @@ func FlattenKeyIndividualPolicy(policy string, policies []kp.Policy) []map[strin
 		return rotationMap
 	} else if policy == "dual_auth_delete" {
 		return dualAuthMap
-	}
-	return nil
-}
-
-func FlattenInstancePolicy(policyType string, policies []kp.InstancePolicy) []map[string]interface{} {
-	dualAuthMap := make([]map[string]interface{}, 0, 1)
-	rotationMap := make([]map[string]interface{}, 0, 1)
-	metricsMap := make([]map[string]interface{}, 0, 1)
-	keyCreateImportAccessMap := make([]map[string]interface{}, 0, 1)
-	for _, policy := range policies {
-		policyInstance := map[string]interface{}{
-			"created_by":    policy.CreatedBy,
-			"creation_date": (*policy.CreatedAt).String(),
-			"updated_by":    policy.UpdatedBy,
-			"last_updated":  (*policy.UpdatedAt).String(),
-		}
-		if policy.PolicyType == "dualAuthDelete" {
-			policyInstance["enabled"] = policy.PolicyData.Enabled
-			dualAuthMap = append(dualAuthMap, policyInstance)
-		}
-		if policy.PolicyType == "rotation" {
-			policyInstance["enabled"] = policy.PolicyData.Enabled
-			if policy.PolicyData.Attributes != nil {
-				policyInstance["interval_month"] = policy.PolicyData.Attributes.IntervalMonth
-			}
-			rotationMap = append(rotationMap, policyInstance)
-		}
-		if policy.PolicyType == "metrics" {
-			policyInstance["enabled"] = policy.PolicyData.Enabled
-			metricsMap = append(metricsMap, policyInstance)
-		}
-		if policy.PolicyType == "keyCreateImportAccess" {
-			policyInstance["enabled"] = policy.PolicyData.Enabled
-			policyInstance["create_root_key"] = policy.PolicyData.Attributes.CreateRootKey
-			policyInstance["create_standard_key"] = policy.PolicyData.Attributes.CreateStandardKey
-			policyInstance["import_root_key"] = policy.PolicyData.Attributes.ImportRootKey
-			policyInstance["import_standard_key"] = policy.PolicyData.Attributes.ImportStandardKey
-			policyInstance["enforce_token"] = policy.PolicyData.Attributes.EnforceToken
-			keyCreateImportAccessMap = append(keyCreateImportAccessMap, policyInstance)
-		}
-	}
-	if policyType == "rotation" {
-		return rotationMap
-	} else if policyType == "dual_auth_delete" {
-		return dualAuthMap
-	} else if policyType == "metrics" {
-		return metricsMap
-	} else if policyType == "key_create_import_access" {
-		return keyCreateImportAccessMap
 	}
 	return nil
 }
@@ -3325,7 +3186,7 @@ func FlattenSatelliteHosts(hostList []kubernetesserviceapiv1.MultishiftQueueNode
 }
 
 func FlattenWorkerPoolHostLabels(hostLabels map[string]string) *schema.Set {
-	mapped := make([]string, len(hostLabels))
+	mapped := make([]string, len(hostLabels)-1)
 	idx := 0
 	for k, v := range hostLabels {
 		if strings.HasPrefix(k, "os") {

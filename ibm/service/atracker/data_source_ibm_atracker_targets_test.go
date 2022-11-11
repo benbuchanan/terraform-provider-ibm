@@ -53,7 +53,6 @@ func TestAccIBMAtrackerTargetsDataSourceAllArgs(t *testing.T) {
 					resource.TestCheckResourceAttr("data.ibm_atracker_targets.atracker_targets", "targets.0.name", targetName),
 					resource.TestCheckResourceAttrSet("data.ibm_atracker_targets.atracker_targets", "targets.0.crn"),
 					resource.TestCheckResourceAttr("data.ibm_atracker_targets.atracker_targets", "targets.0.target_type", targetTargetType),
-					resource.TestCheckResourceAttr("data.ibm_atracker_targets.atracker_targets", "targets.0.region", targetRegion),
 					resource.TestCheckResourceAttrSet("data.ibm_atracker_targets.atracker_targets", "targets.0.encryption_key"),
 					resource.TestCheckResourceAttrSet("data.ibm_atracker_targets.atracker_targets", "targets.0.created_at"),
 					resource.TestCheckResourceAttrSet("data.ibm_atracker_targets.atracker_targets", "targets.0.updated_at"),
@@ -73,15 +72,14 @@ func testAccCheckIBMAtrackerTargetsDataSourceConfigBasic(targetName string, targ
 				endpoint = "s3.private.us-east.cloud-object-storage.appdomain.cloud"
 				target_crn = "crn:v1:bluemix:public:cloud-object-storage:global:a/11111111111111111111111111111111:22222222-2222-2222-2222-222222222222::"
 				bucket = "my-atracker-bucket"
-				api_key = "%s" // pragma: allowlist secret
-				service_to_service_enabled = true
+				api_key = "xxxxxxxxxxxxxx"
 			}
 		}
 
 		data "ibm_atracker_targets" "atracker_targets" {
 			name = ibm_atracker_target.atracker_target.name
 		}
-	`, targetName, targetTargetType, acc.COSApiKey)
+	`, targetName, targetTargetType)
 }
 
 func testAccCheckIBMAtrackerTargetsDataSourceConfig(targetName string, targetTargetType string, targetRegion string) string {
@@ -89,27 +87,17 @@ func testAccCheckIBMAtrackerTargetsDataSourceConfig(targetName string, targetTar
 		resource "ibm_atracker_target" "atracker_target" {
 			name = "%s"
 			target_type = "%s"
-			region = "%s"
 			cos_endpoint {
 				endpoint = "s3.private.us-east.cloud-object-storage.appdomain.cloud"
 				target_crn = "crn:v1:bluemix:public:cloud-object-storage:global:a/11111111111111111111111111111111:22222222-2222-2222-2222-222222222222::"
 				bucket = "my-atracker-bucket"
-				api_key = "%s" // pragma: allowlist secret
+				api_key = "xxxxxxxxxxxxxx"
 				service_to_service_enabled = true
 			}
-			logdna_endpoint {
-				target_crn = "crn:v1:bluemix:public:logdna:us-south:a/11111111111111111111111111111111:22222222-2222-2222-2222-222222222222::"
-				ingestion_key = "%s"
-			}
-			eventstreams_endpoint {
-				target_crn = "crn:v1:bluemix:public:messagehub:us-south:a/11111111111111111111111111111111:22222222-2222-2222-2222-222222222222::"
-				brokers = [ "kafka-x:9094" ]
-				topic = "my-topic"
-				api_key = "%s" // pragma: allowlist secret
-			}
 		}
+
 		data "ibm_atracker_targets" "atracker_targets" {
 			name = ibm_atracker_target.atracker_target.name
 		}
-	`, targetName, targetTargetType, targetRegion, acc.COSApiKey, acc.IngestionKey, acc.IesApiKey)
+	`, targetName, targetTargetType)
 }

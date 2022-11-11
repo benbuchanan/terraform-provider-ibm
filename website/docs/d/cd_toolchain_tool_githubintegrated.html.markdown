@@ -1,23 +1,23 @@
 ---
 layout: "ibm"
-page_title: "IBM : ibm_cd_toolchain_tool_artifactory"
+page_title: "IBM : ibm_cd_toolchain_tool_githubintegrated"
 description: |-
-  Get information about cd_toolchain_tool_artifactory
+  Get information about cd_toolchain_tool_githubintegrated
 subcategory: "CD Toolchain"
 ---
 
-# ibm_cd_toolchain_tool_artifactory
+# ibm_cd_toolchain_tool_githubintegrated
 
 ~> **Beta:** This data source is in Beta, and is subject to change.
 
-Provides a read-only data source for cd_toolchain_tool_artifactory. You can then reference the fields of the data source in other resources within the same configuration using interpolation syntax.
+Provides a read-only data source for cd_toolchain_tool_githubintegrated. You can then reference the fields of the data source in other resources within the same configuration using interpolation syntax.
 
 ## Example Usage
 
 ```hcl
-data "ibm_cd_toolchain_tool_artifactory" "cd_toolchain_tool_artifactory" {
+data "ibm_cd_toolchain_tool_githubintegrated" "cd_toolchain_tool_githubintegrated" {
 	tool_id = "tool_id"
-	toolchain_id = ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory.toolchain_id
+	toolchain_id = ibm_cd_toolchain_tool_githubintegrated.cd_toolchain_tool_githubintegrated.toolchain_id
 }
 ```
 
@@ -34,7 +34,7 @@ Review the argument reference that you can specify for your data source.
 
 In addition to all argument references listed, you can access the following attribute references after your data source is created.
 
-* `id` - The unique identifier of the cd_toolchain_tool_artifactory.
+* `id` - The unique identifier of the cd_toolchain_tool_githubintegrated.
 * `crn` - (String) Tool CRN.
 
 * `href` - (String) URI representing the tool.
@@ -43,17 +43,26 @@ In addition to all argument references listed, you can access the following attr
 
 * `parameters` - (List) Unique key-value pairs representing parameters to be used to create the tool.
 Nested scheme for **parameters**:
-	* `dashboard_url` - (String) Type the URL that you want to navigate to when you click the Artifactory integration tile.
-	* `mirror_url` - (String) Type the URL for your Artifactory virtual repository, which is a repository that can see your private repositories and a cache of the public repositories.
-	* `name` - (String) Type a name for this tool integration, for example: my-artifactory. This name displays on your toolchain.
-	* `release_url` - (String) Type the URL for your Artifactory release repository.
-	* `repository_name` - (String) Type the name of your artifactory repository where your docker images are located.
-	* `repository_url` - (String) Type the URL of your artifactory repository where your docker images are located.
-	* `snapshot_url` - (String) Type the URL for your Artifactory snapshot repository.
-	* `token` - (String) Type the API key for your Artifactory repository.
-	* `type` - (String) Choose the type of repository for your Artifactory integration.
-	  * Constraints: Allowable values are: `npm`, `maven`, `docker`.
-	* `user_id` - (String) Type the User ID or email for your Artifactory repository.
+	* `api_root_url` - (String) e.g. https://github.ibm.com/api/v3.
+	* `auto_init` - (Boolean) Select this checkbox to initialize this repository with a README.
+	  * Constraints: The default value is `false`.
+	* `enable_traceability` - (Boolean) Select this check box to track the deployment of code changes by creating tags, labels and comments on commits, pull requests and referenced issues.
+	  * Constraints: The default value is `false`.
+	* `git_id` - (String)
+	* `has_issues` - (Boolean) Select this check box to enable GitHub Issues for lightweight issue tracking.
+	  * Constraints: The default value is `true`.
+	* `integration_owner` - (String) Select the user which git operations will be performed as.
+	* `legal` - (Boolean)
+	  * Constraints: The default value is `false`.
+	* `owner_id` - (String)
+	* `private_repo` - (Boolean) Select this check box to make this repository private.
+	  * Constraints: The default value is `false`.
+	* `repo_name` - (String)
+	* `repo_url` - (String) Type the URL of the repository that you are linking to.
+	* `source_repo_url` - (String) Type the URL of the repository that you are forking or cloning.
+	* `token_url` - (String) Integration token URL.
+	* `type` - (String)
+	  * Constraints: Allowable values are: `new`, `fork`, `clone`, `link`.
 
 * `referent` - (List) Information on URIs to access this resource through the UI or API.
 Nested scheme for **referent**:

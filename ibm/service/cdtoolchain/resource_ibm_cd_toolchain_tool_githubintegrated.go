@@ -17,12 +17,12 @@ import (
 	"github.com/IBM/continuous-delivery-go-sdk/cdtoolchainv2"
 )
 
-func ResourceIBMCdToolchainToolJira() *schema.Resource {
+func ResourceIBMCdToolchainToolGithubintegrated() *schema.Resource {
 	return &schema.Resource{
-		CreateContext: resourceIBMCdToolchainToolJiraCreate,
-		ReadContext:   resourceIBMCdToolchainToolJiraRead,
-		UpdateContext: resourceIBMCdToolchainToolJiraUpdate,
-		DeleteContext: resourceIBMCdToolchainToolJiraDelete,
+		CreateContext: resourceIBMCdToolchainToolGithubintegratedCreate,
+		ReadContext:   resourceIBMCdToolchainToolGithubintegratedRead,
+		UpdateContext: resourceIBMCdToolchainToolGithubintegratedUpdate,
+		DeleteContext: resourceIBMCdToolchainToolGithubintegratedDelete,
 		Importer:      &schema.ResourceImporter{},
 
 		Schema: map[string]*schema.Schema{
@@ -30,7 +30,7 @@ func ResourceIBMCdToolchainToolJira() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: validate.InvokeValidator("ibm_cd_toolchain_tool_jira", "toolchain_id"),
+				ValidateFunc: validate.InvokeValidator("ibm_cd_toolchain_tool_githubintegrated", "toolchain_id"),
 				Description:  "ID of the toolchain to bind the tool to.",
 			},
 			"parameters": &schema.Schema{
@@ -38,36 +38,144 @@ func ResourceIBMCdToolchainToolJira() *schema.Resource {
 				MinItems:    1,
 				MaxItems:    1,
 				Required:    true,
-				Description: "Unique key-value pairs representing parameters to be used to create the tool. A list of parameters for each tool integration can be found in the <a href=\"https://cloud.ibm.com/docs/ContinuousDelivery?topic=ContinuousDelivery-integrations\">Configuring tool integrations page</a>.",
+				Description: "Unique key-value pairs representing parameters to be used to create the tool.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-						"project_key": &schema.Schema{
-							Type:        schema.TypeString,
-							Required:    true,
-							Description: "The project key of your JIRA project.",
+						"git_id": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
 						},
-						"api_url": &schema.Schema{
-							Type:        schema.TypeString,
-							Required:    true,
-							Description: "The base API URL for your JIRA instance.",
-						},
-						"username": &schema.Schema{
+						"api_root_url": &schema.Schema{
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: "The user name for your JIRA account. Optional for public projects.",
+							Computed:    true,
+							Description: "e.g. https://github.ibm.com/api/v3.",
+						},
+						"legal": &schema.Schema{
+							Type:     schema.TypeBool,
+							Optional: true,
+							Computed: true,
+						},
+						"owner_id": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"repo_name": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"repo_url": &schema.Schema{
+							Type:        schema.TypeString,
+							Optional:    true,
+							Computed:    true,
+							Description: "Type the URL of the repository that you are linking to.",
+						},
+						"source_repo_url": &schema.Schema{
+							Type:        schema.TypeString,
+							Optional:    true,
+							Computed:    true,
+							Description: "Type the URL of the repository that you are forking or cloning.",
+						},
+						"token_url": &schema.Schema{
+							Type:        schema.TypeString,
+							Optional:    true,
+							Computed:    true,
+							Description: "Integration token URL.",
+						},
+						"type": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+							Computed: true,
+						},
+						"private_repo": &schema.Schema{
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Computed:    true,
+							Description: "Select this check box to make this repository private.",
+						},
+						"auto_init": &schema.Schema{
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Computed:    true,
+							Description: "Select this checkbox to initialize this repository with a README.",
+						},
+						"has_issues": &schema.Schema{
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     true,
+							Description: "Select this check box to enable GitHub Issues for lightweight issue tracking.",
 						},
 						"enable_traceability": &schema.Schema{
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     false,
-							Description: "Track the deployment of code changes by creating tags, labels and comments on commits, pull requests and referenced issues.",
+							Description: "Select this check box to track the deployment of code changes by creating tags, labels and comments on commits, pull requests and referenced issues.",
 						},
-						"api_token": &schema.Schema{
-							Type:             schema.TypeString,
-							Optional:         true,
-							DiffSuppressFunc: flex.SuppressHashedRawSecret,
-							Sensitive:        true,
-							Description:      "The api token for your JIRA account. Optional for public projects. You can use a toolchain secret reference for this parameter. For more information, see [Protecting your sensitive data in Continuous Delivery](https://cloud.ibm.com/docs/ContinuousDelivery?topic=ContinuousDelivery-cd_data_security#cd_secure_credentials).",
+						"integration_owner": &schema.Schema{
+							Type:        schema.TypeString,
+							Optional:    true,
+							Computed:    true,
+							Description: "Select the user which git operations will be performed as.",
+						},
+					},
+				},
+			},
+			"initialization": &schema.Schema{
+				Type:     schema.TypeList,
+				MinItems: 1,
+				MaxItems: 1,
+				Required: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"legal": &schema.Schema{
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  true,
+							ForceNew: true,
+						},
+						"owner_id": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+						"repo_name": &schema.Schema{
+							Type:     schema.TypeString,
+							Optional: true,
+							ForceNew: true,
+						},
+						"repo_url": &schema.Schema{
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
+							Description: "Type the URL of the repository that you are linking to.",
+						},
+						"source_repo_url": &schema.Schema{
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
+							Description: "Type the URL of the repository that you are forking or cloning.",
+						},
+						"type": &schema.Schema{
+							Type:     schema.TypeString,
+							Required: true,
+							ForceNew: true,
+						},
+						"private_repo": &schema.Schema{
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							ForceNew:    true,
+							Description: "Select this check box to make this repository private.",
+						},
+						"auto_init": &schema.Schema{
+							Type:        schema.TypeBool,
+							Optional:    true,
+							Default:     false,
+							ForceNew:    true,
+							Description: "Select this checkbox to initialize this repository with a README.",
 						},
 					},
 				},
@@ -75,13 +183,13 @@ func ResourceIBMCdToolchainToolJira() *schema.Resource {
 			"name": &schema.Schema{
 				Type:         schema.TypeString,
 				Optional:     true,
-				ValidateFunc: validate.InvokeValidator("ibm_cd_toolchain_tool_jira", "name"),
-				Description:  "Name of the tool.",
+				ValidateFunc: validate.InvokeValidator("ibm_cd_toolchain_tool_githubintegrated", "name"),
+				Description:  "Name of tool.",
 			},
 			"resource_group_id": &schema.Schema{
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Resource group where the tool is located.",
+				Description: "Resource group where tool can be found.",
 			},
 			"crn": &schema.Schema{
 				Type:        schema.TypeString,
@@ -107,12 +215,12 @@ func ResourceIBMCdToolchainToolJira() *schema.Resource {
 						"ui_href": &schema.Schema{
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: "URI representing this resource through the UI.",
+							Description: "URI representing the this resource through the UI.",
 						},
 						"api_href": &schema.Schema{
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: "URI representing this resource through an API.",
+							Description: "URI representing the this resource through an API.",
 						},
 					},
 				},
@@ -136,7 +244,7 @@ func ResourceIBMCdToolchainToolJira() *schema.Resource {
 	}
 }
 
-func ResourceIBMCdToolchainToolJiraValidator() *validate.ResourceValidator {
+func ResourceIBMCdToolchainToolGithubintegratedValidator() *validate.ResourceValidator {
 	validateSchema := make([]validate.ValidateSchema, 0)
 	validateSchema = append(validateSchema,
 		validate.ValidateSchema{
@@ -159,11 +267,11 @@ func ResourceIBMCdToolchainToolJiraValidator() *validate.ResourceValidator {
 		},
 	)
 
-	resourceValidator := validate.ResourceValidator{ResourceName: "ibm_cd_toolchain_tool_jira", Schema: validateSchema}
+	resourceValidator := validate.ResourceValidator{ResourceName: "ibm_cd_toolchain_tool_githubintegrated", Schema: validateSchema}
 	return &resourceValidator
 }
 
-func resourceIBMCdToolchainToolJiraCreate(context context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceIBMCdToolchainToolGithubintegratedCreate(context context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	cdToolchainClient, err := meta.(conns.ClientSession).CdToolchainV2()
 	if err != nil {
 		return diag.FromErr(err)
@@ -172,12 +280,8 @@ func resourceIBMCdToolchainToolJiraCreate(context context.Context, d *schema.Res
 	createToolOptions := &cdtoolchainv2.CreateToolOptions{}
 
 	createToolOptions.SetToolchainID(d.Get("toolchain_id").(string))
-	createToolOptions.SetToolTypeID("jira")
-	remapFields := map[string]string{
-		"api_token": "password",
-	}
-	parametersModel := GetParametersForCreate(d, ResourceIBMCdToolchainToolJira(), remapFields)
-	parametersModel["type"] = "existing"
+	createToolOptions.SetToolTypeID("github_integrated")
+	parametersModel := GetParametersForCreate(d, ResourceIBMCdToolchainToolGithubintegrated(), nil)
 	createToolOptions.SetParameters(parametersModel)
 	if _, ok := d.GetOk("name"); ok {
 		createToolOptions.SetName(d.Get("name").(string))
@@ -191,10 +295,10 @@ func resourceIBMCdToolchainToolJiraCreate(context context.Context, d *schema.Res
 
 	d.SetId(fmt.Sprintf("%s/%s", *createToolOptions.ToolchainID, *toolchainToolPost.ID))
 
-	return resourceIBMCdToolchainToolJiraRead(context, d, meta)
+	return resourceIBMCdToolchainToolGithubintegratedRead(context, d, meta)
 }
 
-func resourceIBMCdToolchainToolJiraRead(context context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceIBMCdToolchainToolGithubintegratedRead(context context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	cdToolchainClient, err := meta.(conns.ClientSession).CdToolchainV2()
 	if err != nil {
 		return diag.FromErr(err)
@@ -223,10 +327,7 @@ func resourceIBMCdToolchainToolJiraRead(context context.Context, d *schema.Resou
 	if err = d.Set("toolchain_id", toolchainTool.ToolchainID); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting toolchain_id: %s", err))
 	}
-	remapFields := map[string]string{
-		"api_token": "password",
-	}
-	parametersMap := GetParametersFromRead(toolchainTool.Parameters, ResourceIBMCdToolchainToolJira(), remapFields)
+	parametersMap := GetParametersFromRead(toolchainTool.Parameters, ResourceIBMCdToolchainToolGithubintegrated(), nil)
 	if err = d.Set("parameters", []map[string]interface{}{parametersMap}); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting parameters: %s", err))
 	}
@@ -245,7 +346,7 @@ func resourceIBMCdToolchainToolJiraRead(context context.Context, d *schema.Resou
 	if err = d.Set("href", toolchainTool.Href); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting href: %s", err))
 	}
-	referentMap, err := resourceIBMCdToolchainToolJiraToolModelReferentToMap(toolchainTool.Referent)
+	referentMap, err := resourceIBMCdToolchainToolGithubintegratedToolModelReferentToMap(toolchainTool.Referent)
 	if err != nil {
 		return diag.FromErr(err)
 	}
@@ -265,7 +366,7 @@ func resourceIBMCdToolchainToolJiraRead(context context.Context, d *schema.Resou
 	return nil
 }
 
-func resourceIBMCdToolchainToolJiraUpdate(context context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceIBMCdToolchainToolGithubintegratedUpdate(context context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	cdToolchainClient, err := meta.(conns.ClientSession).CdToolchainV2()
 	if err != nil {
 		return diag.FromErr(err)
@@ -289,10 +390,7 @@ func resourceIBMCdToolchainToolJiraUpdate(context context.Context, d *schema.Res
 			" The resource must be re-created to update this property.", "toolchain_id"))
 	}
 	if d.HasChange("parameters") {
-		remapFields := map[string]string{
-			"api_token": "password",
-		}
-		parameters := GetParametersForUpdate(d, ResourceIBMCdToolchainToolJira(), remapFields)
+		parameters := GetParametersForUpdate(d, ResourceIBMCdToolchainToolGithubintegrated(), nil)
 		patchVals.Parameters = parameters
 		hasChange = true
 	}
@@ -311,10 +409,10 @@ func resourceIBMCdToolchainToolJiraUpdate(context context.Context, d *schema.Res
 		}
 	}
 
-	return resourceIBMCdToolchainToolJiraRead(context, d, meta)
+	return resourceIBMCdToolchainToolGithubintegratedRead(context, d, meta)
 }
 
-func resourceIBMCdToolchainToolJiraDelete(context context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceIBMCdToolchainToolGithubintegratedDelete(context context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	cdToolchainClient, err := meta.(conns.ClientSession).CdToolchainV2()
 	if err != nil {
 		return diag.FromErr(err)
@@ -341,7 +439,7 @@ func resourceIBMCdToolchainToolJiraDelete(context context.Context, d *schema.Res
 	return nil
 }
 
-func resourceIBMCdToolchainToolJiraToolModelReferentToMap(model *cdtoolchainv2.ToolModelReferent) (map[string]interface{}, error) {
+func resourceIBMCdToolchainToolGithubintegratedToolModelReferentToMap(model *cdtoolchainv2.ToolModelReferent) (map[string]interface{}, error) {
 	modelMap := make(map[string]interface{})
 	if model.UIHref != nil {
 		modelMap["ui_href"] = model.UIHref

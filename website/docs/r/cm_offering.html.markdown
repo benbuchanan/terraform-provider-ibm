@@ -2,19 +2,19 @@
 layout: "ibm"
 page_title: "IBM : ibm_cm_offering"
 description: |-
-  Manages ibm_cm_offering.
-subcategory: "Catalog Management"
+  Manages cm_offering.
+subcategory: "Catalog Management API"
 ---
 
 # ibm_cm_offering
 
-Provides a resource for ibm_cm_offering. This allows ibm_cm_offering to be created, updated and deleted.
+Provides a resource for cm_offering. This allows cm_offering to be created, updated and deleted.
 
 ## Example Usage
 
 ```hcl
 resource "ibm_cm_offering" "cm_offering" {
-  catalog_id = ibm_cm_catalog.cm_catalog.id
+  catalog_identifier = ibm_cm_catalog.cm_catalog.id
   label = "offering label"
   name = "offering name"
   offering_icon_url = "icon_url"
@@ -26,8 +26,7 @@ resource "ibm_cm_offering" "cm_offering" {
 
 Review the argument reference that you can specify for your resource.
 
-* `catalog_id` - (Required, Forces new resource, String) Catalog identifier.
-* `offering_id` - (Optional, Forces new resource, String) Offering identifier, provide to import an existing offering.
+* `catalog_identifier` - (Required, Forces new resource, String) Catalog identifier.
 * `hidden` - (Optional, Boolean) Determine if this offering should be displayed in the Consumption UI.
 * `label` - (Optional, String) Display Name in the requested language.
 * `long_description` - (Optional, String) Long description in the requested language.
@@ -41,7 +40,7 @@ Review the argument reference that you can specify for your resource.
 
 In addition to all argument references listed, you can access the following attribute references after your resource is created.
 
-* `id` - The unique identifier of the ibm_cm_offering.
+* `id` - The unique identifier of the cm_offering.
 * `badges` - (List) A list of badges for this offering.
 Nested scheme for **badges**:
 	* `authority` - (String) Authority for the current badge.
@@ -561,11 +560,15 @@ For more informaton, see [here](https://registry.terraform.io/providers/IBM-Clou
 ## Import
 
 You can import the `ibm_cm_offering` resource by using `id`.
-The `id` property is just the `offering_id`.
+The `id` property can be formed from `catalog_identifier`, and `offering_id` in the following format:
 
+```
+<catalog_identifier>/<offering_id>
+```
+* `catalog_identifier`: A string. Catalog identifier.
 * `offering_id`: A string. Offering identification.
 
 # Syntax
 ```
-$ terraform import ibm_cm_offering.cm_offering <offering_id>
+$ terraform import ibm_cm_offering.cm_offering <catalog_identifier>/<offering_id>
 ```

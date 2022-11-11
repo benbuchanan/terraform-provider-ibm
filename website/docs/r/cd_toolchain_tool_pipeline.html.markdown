@@ -3,23 +3,25 @@ layout: "ibm"
 page_title: "IBM : ibm_cd_toolchain_tool_pipeline"
 description: |-
   Manages cd_toolchain_tool_pipeline.
-subcategory: "Continuous Delivery"
+subcategory: "CD Toolchain"
 ---
 
 # ibm_cd_toolchain_tool_pipeline
 
-Provides a resource for cd_toolchain_tool_pipeline. This allows cd_toolchain_tool_pipeline to be created, updated and deleted.
+~> **Beta:** This resource is in Beta, and is subject to change.
 
-See the [tool integration](https://cloud.ibm.com/docs/ContinuousDelivery?topic=ContinuousDelivery-deliverypipeline) page for more information.
+Provides a resource for cd_toolchain_tool_pipeline. This allows cd_toolchain_tool_pipeline to be created, updated and deleted.
 
 ## Example Usage
 
 ```hcl
-resource "ibm_cd_toolchain_tool_pipeline" "cd_toolchain_tool_pipeline_instance" {
+resource "ibm_cd_toolchain_tool_pipeline" "cd_toolchain_tool_pipeline" {
   parameters {
-		name = "pipeline-tool-01"
+		name = "name"
+		type = "classic"
+		ui_pipeline = true
   }
-  toolchain_id = ibm_cd_toolchain.cd_toolchain.id
+  toolchain_id = "toolchain_id"
 }
 ```
 
@@ -27,11 +29,15 @@ resource "ibm_cd_toolchain_tool_pipeline" "cd_toolchain_tool_pipeline_instance" 
 
 Review the argument reference that you can specify for your resource.
 
-* `name` - (Optional, String) Name of the tool.
+* `name` - (Optional, String) Name of tool.
   * Constraints: The maximum length is `128` characters. The minimum length is `0` characters. The value must match regular expression `/^([^\\x00-\\x7F]|[a-zA-Z0-9-._ ])+$/`.
-* `parameters` - (Required, List) Unique key-value pairs representing parameters to be used to create the tool. A list of parameters for each tool integration can be found in the <a href="https://cloud.ibm.com/docs/ContinuousDelivery?topic=ContinuousDelivery-integrations">Configuring tool integrations page</a>.
+* `parameters` - (Required, List) Unique key-value pairs representing parameters to be used to create the tool.
 Nested scheme for **parameters**:
-	* `name` - (Optional, String) The name used for this tool integration.
+	* `name` - (Optional, String)
+	* `type` - (Optional, String)
+	  * Constraints: Allowable values are: `classic`, `tekton`.
+	* `ui_pipeline` - (Optional, Boolean) When this check box is selected, the applications that this pipeline deploys are shown in the View app menu on the toolchain page. This setting is best for UI apps that can be accessed from a browser.
+	  * Constraints: The default value is `false`.
 * `toolchain_id` - (Required, Forces new resource, String) ID of the toolchain to bind the tool to.
   * Constraints: The maximum length is `36` characters. The minimum length is `36` characters. The value must match regular expression `/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$/`.
 
@@ -44,9 +50,9 @@ In addition to all argument references listed, you can access the following attr
 * `href` - (String) URI representing the tool.
 * `referent` - (List) Information on URIs to access this resource through the UI or API.
 Nested scheme for **referent**:
-	* `api_href` - (String) URI representing this resource through an API.
-	* `ui_href` - (String) URI representing this resource through the UI.
-* `resource_group_id` - (String) Resource group where the tool is located.
+	* `api_href` - (String) URI representing the this resource through an API.
+	* `ui_href` - (String) URI representing the this resource through the UI.
+* `resource_group_id` - (String) Resource group where tool can be found.
 * `state` - (String) Current configuration state of the tool.
   * Constraints: Allowable values are: `configured`, `configuring`, `misconfigured`, `unconfigured`.
 * `toolchain_crn` - (String) CRN of toolchain which the tool is bound to.

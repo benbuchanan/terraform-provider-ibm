@@ -38,8 +38,7 @@ func TestAccIBMDatabaseInstance_Etcd_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(name, "adminuser", "root"),
 					resource.TestCheckResourceAttr(name, "members_memory_allocation_mb", "3072"),
 					resource.TestCheckResourceAttr(name, "members_disk_allocation_mb", "61440"),
-					resource.TestCheckResourceAttr(name, "whitelist.#", "0"),
-					resource.TestCheckResourceAttr(name, "allowlist.#", "1"),
+					resource.TestCheckResourceAttr(name, "whitelist.#", "1"),
 					resource.TestCheckResourceAttr(name, "users.#", "1"),
 					resource.TestCheckResourceAttr(name, "connectionstrings.#", "2"),
 					resource.TestCheckResourceAttr(name, "connectionstrings.1.name", "root"),
@@ -58,8 +57,7 @@ func TestAccIBMDatabaseInstance_Etcd_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(name, "location", acc.IcdDbRegion),
 					resource.TestCheckResourceAttr(name, "members_memory_allocation_mb", "6144"),
 					resource.TestCheckResourceAttr(name, "members_disk_allocation_mb", "64512"),
-					resource.TestCheckResourceAttr(name, "whitelist.#", "0"),
-					resource.TestCheckResourceAttr(name, "allowlist.#", "2"),
+					resource.TestCheckResourceAttr(name, "whitelist.#", "2"),
 					resource.TestCheckResourceAttr(name, "users.#", "2"),
 					resource.TestCheckResourceAttr(name, "connectionstrings.#", "3"),
 				),
@@ -74,7 +72,6 @@ func TestAccIBMDatabaseInstance_Etcd_Basic(t *testing.T) {
 					resource.TestCheckResourceAttr(name, "members_memory_allocation_mb", "3072"),
 					resource.TestCheckResourceAttr(name, "members_disk_allocation_mb", "64512"),
 					resource.TestCheckResourceAttr(name, "whitelist.#", "0"),
-					resource.TestCheckResourceAttr(name, "allowlist.#", "0"),
 					resource.TestCheckResourceAttr(name, "users.#", "0"),
 					resource.TestCheckResourceAttr(name, "connectionstrings.#", "1"),
 				),
@@ -141,7 +138,7 @@ func testAccCheckIBMDatabaseInstanceEtcdBasic(databaseResourceGroup string, name
 		  name     = "user123"
 		  password = "password12"
 		}
-		allowlist {
+		whitelist {
 		  address     = "172.168.1.2/32"
 		  description = "desc1"
 		}
@@ -173,11 +170,11 @@ func testAccCheckIBMDatabaseInstanceEtcdFullyspecified(databaseResourceGroup str
 		  name     = "user124"
 		  password = "password12"
 		}
-		allowlist {
+		whitelist {
 		  address     = "172.168.1.2/32"
 		  description = "desc1"
 		}
-		allowlist {
+		whitelist {
 		  address     = "172.168.1.1/32"
 		  description = "desc"
 		}

@@ -1,27 +1,46 @@
 ---
 layout: "ibm"
-page_title: "IBM : ibm_cd_toolchain_tool_sonarqube"
+page_title: "IBM : ibm_cd_toolchain_tool_githubintegrated"
 description: |-
-  Manages cd_toolchain_tool_sonarqube.
+  Manages cd_toolchain_tool_githubintegrated.
 subcategory: "CD Toolchain"
 ---
 
-# ibm_cd_toolchain_tool_sonarqube
+# ibm_cd_toolchain_tool_githubintegrated
 
 ~> **Beta:** This resource is in Beta, and is subject to change.
 
-Provides a resource for cd_toolchain_tool_sonarqube. This allows cd_toolchain_tool_sonarqube to be created, updated and deleted.
+Provides a resource for cd_toolchain_tool_githubintegrated. This allows cd_toolchain_tool_githubintegrated to be created, updated and deleted.
 
 ## Example Usage
 
 ```hcl
-resource "ibm_cd_toolchain_tool_sonarqube" "cd_toolchain_tool_sonarqube" {
+resource "ibm_cd_toolchain_tool_githubintegrated" "cd_toolchain_tool_githubintegrated" {
+  initialization {
+		legal = true
+		owner_id = "owner_id"
+		repo_name = "repo_name"
+		repo_url = "repo_url"
+		source_repo_url = "source_repo_url"
+		type = "new"
+		private_repo = true
+		auto_init = true
+  }
   parameters {
-		name = "name"
-		dashboard_url = "dashboard_url"
-		user_login = "user_login"
-		user_password = "user_password"
-		blind_connection = true
+		git_id = "git_id"
+		api_root_url = "api_root_url"
+		legal = true
+		owner_id = "owner_id"
+		repo_name = "repo_name"
+		repo_url = "repo_url"
+		source_repo_url = "source_repo_url"
+		token_url = "token_url"
+		type = "new"
+		private_repo = true
+		auto_init = true
+		has_issues = true
+		enable_traceability = true
+		integration_owner = "integration_owner"
   }
   toolchain_id = "toolchain_id"
 }
@@ -31,16 +50,44 @@ resource "ibm_cd_toolchain_tool_sonarqube" "cd_toolchain_tool_sonarqube" {
 
 Review the argument reference that you can specify for your resource.
 
+* `initialization` - (Required, List) 
+Nested scheme for **initialization**:
+	* `auto_init` - (Optional, Forces new resource, Boolean) Select this checkbox to initialize this repository with a README.
+	  * Constraints: The default value is `false`.
+	* `legal` - (Optional, Forces new resource, Boolean)
+	  * Constraints: The default value is `true`.
+	* `owner_id` - (Optional, Forces new resource, String)
+	* `private_repo` - (Optional, Forces new resource, Boolean) Select this check box to make this repository private.
+	  * Constraints: The default value is `false`.
+	* `repo_name` - (Optional, Forces new resource, String)
+	* `repo_url` - (Optional, Forces new resource, String) Type the URL of the repository that you are linking to.
+	* `source_repo_url` - (Optional, Forces new resource, String) Type the URL of the repository that you are forking or cloning.
+	* `type` - (Required, Forces new resource, String)
+	  * Constraints: Allowable values are: `new`, `fork`, `clone`, `link`.
 * `name` - (Optional, String) Name of tool.
   * Constraints: The maximum length is `128` characters. The minimum length is `0` characters. The value must match regular expression `/^([^\\x00-\\x7F]|[a-zA-Z0-9-._ ])+$/`.
 * `parameters` - (Required, List) Unique key-value pairs representing parameters to be used to create the tool.
 Nested scheme for **parameters**:
-	* `blind_connection` - (Optional, Boolean) Select this checkbox only if the server is not addressable on the public internet. IBM Cloud will not be able to validate the connection details you provide.
+	* `api_root_url` - (Optional, String) e.g. https://github.ibm.com/api/v3.
+	* `auto_init` - (Optional, Boolean) Select this checkbox to initialize this repository with a README.
 	  * Constraints: The default value is `false`.
-	* `dashboard_url` - (Required, String) Type the URL of the SonarQube instance that you want to open when you click the SonarQube card in your toolchain.
-	* `name` - (Required, String) Type a name for this tool integration, for example: my-sonarqube. This name displays on your toolchain.
-	* `user_login` - (Optional, String) If you are using an authentication token, leave this field empty.
-	* `user_password` - (Optional, String)
+	* `enable_traceability` - (Optional, Boolean) Select this check box to track the deployment of code changes by creating tags, labels and comments on commits, pull requests and referenced issues.
+	  * Constraints: The default value is `false`.
+	* `git_id` - (Optional, String)
+	* `has_issues` - (Optional, Boolean) Select this check box to enable GitHub Issues for lightweight issue tracking.
+	  * Constraints: The default value is `true`.
+	* `integration_owner` - (Optional, String) Select the user which git operations will be performed as.
+	* `legal` - (Optional, Boolean)
+	  * Constraints: The default value is `false`.
+	* `owner_id` - (Optional, String)
+	* `private_repo` - (Optional, Boolean) Select this check box to make this repository private.
+	  * Constraints: The default value is `false`.
+	* `repo_name` - (Optional, String)
+	* `repo_url` - (Optional, String) Type the URL of the repository that you are linking to.
+	* `source_repo_url` - (Optional, String) Type the URL of the repository that you are forking or cloning.
+	* `token_url` - (Optional, String) Integration token URL.
+	* `type` - (Optional, String)
+	  * Constraints: Allowable values are: `new`, `fork`, `clone`, `link`.
 * `toolchain_id` - (Required, Forces new resource, String) ID of the toolchain to bind the tool to.
   * Constraints: The maximum length is `36` characters. The minimum length is `36` characters. The value must match regular expression `/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$/`.
 
@@ -48,7 +95,7 @@ Nested scheme for **parameters**:
 
 In addition to all argument references listed, you can access the following attribute references after your resource is created.
 
-* `id` - The unique identifier of the cd_toolchain_tool_sonarqube.
+* `id` - The unique identifier of the cd_toolchain_tool_githubintegrated.
 * `crn` - (String) Tool CRN.
 * `href` - (String) URI representing the tool.
 * `referent` - (List) Information on URIs to access this resource through the UI or API.
@@ -115,7 +162,7 @@ For more informaton, see [here](https://registry.terraform.io/providers/IBM-Clou
 
 ## Import
 
-You can import the `ibm_cd_toolchain_tool_sonarqube` resource by using `id`.
+You can import the `ibm_cd_toolchain_tool_githubintegrated` resource by using `id`.
 The `id` property can be formed from `toolchain_id`, and `tool_id` in the following format:
 
 ```
@@ -126,5 +173,5 @@ The `id` property can be formed from `toolchain_id`, and `tool_id` in the follow
 
 # Syntax
 ```
-$ terraform import ibm_cd_toolchain_tool_sonarqube.cd_toolchain_tool_sonarqube <toolchain_id>/<tool_id>
+$ terraform import ibm_cd_toolchain_tool_githubintegrated.cd_toolchain_tool_githubintegrated <toolchain_id>/<tool_id>
 ```

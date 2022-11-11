@@ -13,6 +13,7 @@ import (
 
 	acc "github.com/IBM-Cloud/terraform-provider-ibm/ibm/acctest"
 	"github.com/IBM-Cloud/terraform-provider-ibm/ibm/conns"
+	"github.com/IBM-Cloud/terraform-provider-ibm/ibm/flex"
 	"github.com/IBM/platform-services-go-sdk/catalogmanagementv1"
 )
 
@@ -67,6 +68,11 @@ func TestAccIBMCmOfferingSimpleArgs(t *testing.T) {
 					resource.TestCheckResourceAttr("ibm_cm_offering.cm_offering", "long_description", longDescriptionUpdate),
 				),
 			},
+			resource.TestStep{
+				ResourceName:      "ibm_cm_offering.cm_offering",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
 		},
 	})
 }
@@ -79,7 +85,7 @@ func testAccCheckIBMCmOfferingConfigBasic() string {
 		}
 
 		resource "ibm_cm_offering" "cm_offering" {
-			catalog_id = ibm_cm_catalog.cm_catalog.id
+			catalog_identifier = ibm_cm_catalog.cm_catalog.id
 		}
 	`)
 }
@@ -93,7 +99,7 @@ func testAccCheckIBMCmOfferingConfig(label string, name string, shortDescription
 		}
 
 		resource "ibm_cm_offering" "cm_offering" {
-			catalog_id = ibm_cm_catalog.cm_catalog.id
+			catalog_identifier = ibm_cm_catalog.cm_catalog.id
 			label = "%s"
 			name = "%s"
 			short_description = "%s"
@@ -117,8 +123,13 @@ func testAccCheckIBMCmOfferingExists(n string, obj catalogmanagementv1.Offering)
 
 		getOfferingOptions := &catalogmanagementv1.GetOfferingOptions{}
 
-		getOfferingOptions.SetCatalogIdentifier(rs.Primary.Attributes["catalog_id"])
-		getOfferingOptions.SetOfferingID(rs.Primary.ID)
+		parts, err := flex.SepIdParts(rs.Primary.ID, "/")
+		if err != nil {
+			return err
+		}
+
+		getOfferingOptions.SetCatalogIdentifier(parts[0])
+		getOfferingOptions.SetOfferingID(parts[1])
 
 		offering, _, err := catalogManagementClient.GetOffering(getOfferingOptions)
 		if err != nil {
@@ -142,8 +153,13 @@ func testAccCheckIBMCmOfferingCreate(s *terraform.State) error {
 
 		getOfferingOptions := &catalogmanagementv1.GetOfferingOptions{}
 
-		getOfferingOptions.SetCatalogIdentifier(rs.Primary.Attributes["catalog_id"])
-		getOfferingOptions.SetOfferingID(rs.Primary.ID)
+		parts, err := flex.SepIdParts(rs.Primary.ID, "/")
+		if err != nil {
+			return err
+		}
+
+		getOfferingOptions.SetCatalogIdentifier(parts[0])
+		getOfferingOptions.SetOfferingID(parts[1])
 
 		// Try to find the key
 		_, response, err := catalogManagementClient.GetOffering(getOfferingOptions)
@@ -170,8 +186,13 @@ func testAccCheckIBMCmOfferingDestroy(s *terraform.State) error {
 
 		getOfferingOptions := &catalogmanagementv1.GetOfferingOptions{}
 
-		getOfferingOptions.SetCatalogIdentifier(rs.Primary.Attributes["catalog_id"])
-		getOfferingOptions.SetOfferingID(rs.Primary.ID)
+		parts, err := flex.SepIdParts(rs.Primary.ID, "/")
+		if err != nil {
+			return err
+		}
+
+		getOfferingOptions.SetCatalogIdentifier(parts[0])
+		getOfferingOptions.SetOfferingID(parts[1])
 
 		// Try to find the key
 		_, response, err := catalogManagementClient.GetOffering(getOfferingOptions)

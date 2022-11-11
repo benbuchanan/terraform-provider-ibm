@@ -16,7 +16,7 @@ variable "resource_group" {
 variable "region" {
 }
 
-variable "ibmcloud_api_key" {
+variable "ibm_cloud_api_key" {
 }
 
 variable "repositories_prefix" { 

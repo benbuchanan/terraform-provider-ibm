@@ -4,9 +4,9 @@ This example illustrates how to use the CatalogManagementV1
 
 These types of resources are supported:
 
-* ibm_cm_catalog
-* ibm_cm_offering
-* ibm_cm_version
+* cm_catalog
+* cm_offering
+* cm_version
 * cm_offering_instance
 
 ## Usage
@@ -24,20 +24,20 @@ Run `terraform destroy` when you don't need these resources.
 
 ## CatalogManagementV1 resources
 
-ibm_cm_catalog resource:
+cm_catalog resource:
 
 ```hcl
-resource "ibm_cm_catalog" "cm_catalog_instance" {
+resource "cm_catalog" "cm_catalog_instance" {
   label = var.cm_catalog_label
   short_description = var.cm_catalog_short_description
   catalog_icon_url = var.cm_catalog_catalog_icon_url
   tags = var.cm_catalog_tags
 }
 ```
-ibm_cm_offering resource:
+cm_offering resource:
 
 ```hcl
-resource "ibm_cm_offering" "cm_offering_instance" {
+resource "cm_offering" "cm_offering_instance" {
   catalog_id= var.cm_offering_catalog_id
   label = var.cm_offering_label
   offering_icon_url = var.cm_offering_offering_icon_url
@@ -46,11 +46,11 @@ resource "ibm_cm_offering" "cm_offering_instance" {
   tags = var.cm_offering_tags
 }
 ```
-ibm_cm_version resource:
+cm_version resource:
 
 ```hcl
-resource "ibm_cm_version" "cm_version_instance" {
-  catalog_id = var.cm_version_catalog_id
+resource "cm_version" "cm_version_instance" {
+  catalog_identifier = var.cm_version_catalog_identifier
   offering_id = var.cm_version_offering_id
   tags = var.cm_version_tags
   target_kinds = var.cm_version_target_kinds
@@ -76,25 +76,25 @@ resource "cm_offering_instance" "cm_offering_instance_instance" {
 
 ## CatalogManagementV1 Data sources
 
-ibm_cm_catalog data source:
+cm_catalog data source:
 
 ```hcl
-data "ibm_cm_catalog" "cm_catalog_instance" {
-  catalog_identifier = var.cm_catalog_catalog_id
+data "cm_catalog" "cm_catalog_instance" {
+  catalog_identifier = var.cm_catalog_catalog_identifier
 }
 ```
-ibm_cm_offering data source:
+cm_offering data source:
 
 ```hcl
-data "ibm_cm_offering" "cm_offering_instance" {
-  catalog_id = var.cm_offering_catalog_id
+data "cm_offering" "cm_offering_instance" {
+  catalog_identifier = var.cm_offering_catalog_identifier
   offering_id = var.cm_offering_offering_id
 }
 ```
-ibm_cm_version data source:
+cm_version data source:
 
 ```hcl
-data "ibm_cm_version" "cm_version_instance" {
+data "cm_version" "cm_version_instance" {
   version_loc_id = var.cm_version_version_loc_id
 }
 ```

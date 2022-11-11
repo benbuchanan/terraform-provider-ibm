@@ -3,7 +3,7 @@ layout: "ibm"
 page_title: "IBM : ibm_cd_tekton_pipeline_definition"
 description: |-
   Get information about cd_tekton_pipeline_definition
-subcategory: "Continuous Delivery"
+subcategory: "CD Tekton Pipeline"
 ---
 
 # ibm_cd_tekton_pipeline_definition

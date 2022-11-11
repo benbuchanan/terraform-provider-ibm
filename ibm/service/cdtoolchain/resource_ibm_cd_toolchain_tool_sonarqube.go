@@ -38,36 +38,35 @@ func ResourceIBMCdToolchainToolSonarqube() *schema.Resource {
 				MinItems:    1,
 				MaxItems:    1,
 				Required:    true,
-				Description: "Unique key-value pairs representing parameters to be used to create the tool. A list of parameters for each tool integration can be found in the <a href=\"https://cloud.ibm.com/docs/ContinuousDelivery?topic=ContinuousDelivery-integrations\">Configuring tool integrations page</a>.",
+				Description: "Unique key-value pairs representing parameters to be used to create the tool.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"name": &schema.Schema{
 							Type:        schema.TypeString,
 							Required:    true,
-							Description: "The name for this tool integration.",
+							Description: "Type a name for this tool integration, for example: my-sonarqube. This name displays on your toolchain.",
+						},
+						"dashboard_url": &schema.Schema{
+							Type:        schema.TypeString,
+							Required:    true,
+							Description: "Type the URL of the SonarQube instance that you want to open when you click the SonarQube card in your toolchain.",
 						},
 						"user_login": &schema.Schema{
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: "The user id for authenticating to the SonarQube server.",
+							Description: "If you are using an authentication token, leave this field empty.",
 						},
 						"user_password": &schema.Schema{
 							Type:             schema.TypeString,
 							Optional:         true,
 							DiffSuppressFunc: flex.SuppressHashedRawSecret,
 							Sensitive:        true,
-							Description:      "The password or token for authenticating to the SonarQube server. You can use a toolchain secret reference for this parameter. For more information, see [Protecting your sensitive data in Continuous Delivery](https://cloud.ibm.com/docs/ContinuousDelivery?topic=ContinuousDelivery-cd_data_security#cd_secure_credentials).",
 						},
 						"blind_connection": &schema.Schema{
 							Type:        schema.TypeBool,
 							Optional:    true,
 							Default:     false,
-							Description: "When set to true, instructs IBM Cloud Continuous Delivery to not validate the configuration of this integration. Set this to true if the SonarQube server is not addressable on the public internet.",
-						},
-						"server_url": &schema.Schema{
-							Type:        schema.TypeString,
-							Required:    true,
-							Description: "The URL of the SonarQube server.",
+							Description: "Select this checkbox only if the server is not addressable on the public internet. IBM Cloud will not be able to validate the connection details you provide.",
 						},
 					},
 				},
@@ -76,12 +75,12 @@ func ResourceIBMCdToolchainToolSonarqube() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validate.InvokeValidator("ibm_cd_toolchain_tool_sonarqube", "name"),
-				Description:  "Name of the tool.",
+				Description:  "Name of tool.",
 			},
 			"resource_group_id": &schema.Schema{
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Resource group where the tool is located.",
+				Description: "Resource group where tool can be found.",
 			},
 			"crn": &schema.Schema{
 				Type:        schema.TypeString,
@@ -107,12 +106,12 @@ func ResourceIBMCdToolchainToolSonarqube() *schema.Resource {
 						"ui_href": &schema.Schema{
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: "URI representing this resource through the UI.",
+							Description: "URI representing the this resource through the UI.",
 						},
 						"api_href": &schema.Schema{
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: "URI representing this resource through an API.",
+							Description: "URI representing the this resource through an API.",
 						},
 					},
 				},
@@ -173,10 +172,7 @@ func resourceIBMCdToolchainToolSonarqubeCreate(context context.Context, d *schem
 
 	createToolOptions.SetToolchainID(d.Get("toolchain_id").(string))
 	createToolOptions.SetToolTypeID("sonarqube")
-	remapFields := map[string]string{
-		"server_url": "dashboard_url",
-	}
-	parametersModel := GetParametersForCreate(d, ResourceIBMCdToolchainToolSonarqube(), remapFields)
+	parametersModel := GetParametersForCreate(d, ResourceIBMCdToolchainToolSonarqube(), nil)
 	createToolOptions.SetParameters(parametersModel)
 	if _, ok := d.GetOk("name"); ok {
 		createToolOptions.SetName(d.Get("name").(string))
@@ -222,10 +218,7 @@ func resourceIBMCdToolchainToolSonarqubeRead(context context.Context, d *schema.
 	if err = d.Set("toolchain_id", toolchainTool.ToolchainID); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting toolchain_id: %s", err))
 	}
-	remapFields := map[string]string{
-		"server_url": "dashboard_url",
-	}
-	parametersMap := GetParametersFromRead(toolchainTool.Parameters, ResourceIBMCdToolchainToolSonarqube(), remapFields)
+	parametersMap := GetParametersFromRead(toolchainTool.Parameters, ResourceIBMCdToolchainToolSonarqube(), nil)
 	if err = d.Set("parameters", []map[string]interface{}{parametersMap}); err != nil {
 		return diag.FromErr(fmt.Errorf("Error setting parameters: %s", err))
 	}
@@ -288,10 +281,7 @@ func resourceIBMCdToolchainToolSonarqubeUpdate(context context.Context, d *schem
 			" The resource must be re-created to update this property.", "toolchain_id"))
 	}
 	if d.HasChange("parameters") {
-		remapFields := map[string]string{
-			"server_url": "dashboard_url",
-		}
-		parameters := GetParametersForUpdate(d, ResourceIBMCdToolchainToolSonarqube(), remapFields)
+		parameters := GetParametersForUpdate(d, ResourceIBMCdToolchainToolSonarqube(), nil)
 		patchVals.Parameters = parameters
 		hasChange = true
 	}
