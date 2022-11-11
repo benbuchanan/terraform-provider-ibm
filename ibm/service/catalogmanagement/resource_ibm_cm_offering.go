@@ -2631,7 +2631,7 @@ func resourceIBMCmOfferingCreate(context context.Context, d *schema.ResourceData
 		return diag.FromErr(fmt.Errorf("CreateOfferingWithContext failed %s\n%s", err, response))
 	}
 
-	d.SetId(*offering.ID)
+	d.SetId(fmt.Sprintf("%s/%s", *createOfferingOptions.CatalogIdentifier, *offering.ID))
 
 	shareOffering := false
 	shareOfferingOptions := catalogmanagementv1.ShareOfferingOptions{}
@@ -2680,8 +2680,13 @@ func resourceIBMCmOfferingRead(context context.Context, d *schema.ResourceData, 
 
 	getOfferingOptions := &catalogmanagementv1.GetOfferingOptions{}
 
-	getOfferingOptions.SetCatalogIdentifier(d.Get("catalog_id").(string))
-	getOfferingOptions.SetOfferingID(d.Id())
+	parts, err := flex.SepIdParts(d.Id(), "/")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	getOfferingOptions.SetCatalogIdentifier(parts[0])
+	getOfferingOptions.SetOfferingID(parts[1])
 
 	offering, response, err := catalogManagementClient.GetOfferingWithContext(context, getOfferingOptions)
 	if err != nil {
@@ -3475,8 +3480,13 @@ func resourceIBMCmOfferingDelete(context context.Context, d *schema.ResourceData
 
 	deleteOfferingOptions := &catalogmanagementv1.DeleteOfferingOptions{}
 
-	deleteOfferingOptions.SetCatalogIdentifier(d.Get("catalog_id").(string))
-	deleteOfferingOptions.SetOfferingID(d.Id())
+	parts, err := flex.SepIdParts(d.Id(), "/")
+	if err != nil {
+		return diag.FromErr(err)
+	}
+
+	deleteOfferingOptions.SetCatalogIdentifier(parts[0])
+	deleteOfferingOptions.SetOfferingID(parts[1])
 
 	response, err := catalogManagementClient.DeleteOfferingWithContext(context, deleteOfferingOptions)
 	if err != nil {

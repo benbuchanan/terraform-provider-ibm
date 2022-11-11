@@ -38,38 +38,38 @@ func ResourceIBMCdToolchainToolAppconfig() *schema.Resource {
 				MinItems:    1,
 				MaxItems:    1,
 				Required:    true,
-				Description: "Unique key-value pairs representing parameters to be used to create the tool. A list of parameters for each tool integration can be found in the <a href=\"https://cloud.ibm.com/docs/ContinuousDelivery?topic=ContinuousDelivery-integrations\">Configuring tool integrations page</a>.",
+				Description: "Unique key-value pairs representing parameters to be used to create the tool.",
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
 						"name": &schema.Schema{
 							Type:        schema.TypeString,
 							Required:    true,
-							Description: "The name used to identify this tool integration. App Configuration references include this name to identify the App Configuration instance where the configuration values reside. All App Configuration tools integrated into a toolchain should have a unique name to allow resolution to function properly.",
+							Description: "Type a name for this tool integration, for example: my-appconfig. This name displays on your toolchain.",
 						},
-						"location": &schema.Schema{
+						"region": &schema.Schema{
 							Type:        schema.TypeString,
 							Required:    true,
-							Description: "The IBM Cloud location where the App Configuration service instance resides.",
+							Description: "Region.",
 						},
-						"resource_group_name": &schema.Schema{
+						"resource_group": &schema.Schema{
 							Type:        schema.TypeString,
 							Required:    true,
-							Description: "The name of the resource group where the App Configuration service instance resides.",
+							Description: "Resource group.",
 						},
-						"instance_id": &schema.Schema{
+						"instance_name": &schema.Schema{
 							Type:        schema.TypeString,
 							Required:    true,
-							Description: "The guid of the App Configuration service instance.",
+							Description: "The name of your App Configuration instance. You should choose an entry from the list provided based on the selected region and resource group. e.g: App Configuration-01.",
 						},
-						"environment_id": &schema.Schema{
+						"environment_name": &schema.Schema{
 							Type:        schema.TypeString,
 							Required:    true,
-							Description: "The ID of the App Configuration environment.",
+							Description: "App Configuration environment.",
 						},
-						"collection_id": &schema.Schema{
+						"collection_name": &schema.Schema{
 							Type:        schema.TypeString,
 							Required:    true,
-							Description: "The ID of the App Configuration collection.",
+							Description: "App Configuration collection.",
 						},
 					},
 				},
@@ -78,12 +78,12 @@ func ResourceIBMCdToolchainToolAppconfig() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ValidateFunc: validate.InvokeValidator("ibm_cd_toolchain_tool_appconfig", "name"),
-				Description:  "Name of the tool.",
+				Description:  "Name of tool.",
 			},
 			"resource_group_id": &schema.Schema{
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Resource group where the tool is located.",
+				Description: "Resource group where tool can be found.",
 			},
 			"crn": &schema.Schema{
 				Type:        schema.TypeString,
@@ -109,12 +109,12 @@ func ResourceIBMCdToolchainToolAppconfig() *schema.Resource {
 						"ui_href": &schema.Schema{
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: "URI representing this resource through the UI.",
+							Description: "URI representing the this resource through the UI.",
 						},
 						"api_href": &schema.Schema{
 							Type:        schema.TypeString,
 							Optional:    true,
-							Description: "URI representing this resource through an API.",
+							Description: "URI representing the this resource through an API.",
 						},
 					},
 				},
@@ -176,11 +176,10 @@ func resourceIBMCdToolchainToolAppconfigCreate(context context.Context, d *schem
 	createToolOptions.SetToolchainID(d.Get("toolchain_id").(string))
 	createToolOptions.SetToolTypeID("appconfig")
 	remapFields := map[string]string{
-		"location":            "region",
-		"resource_group_name": "resource-group",
-		"instance_id":         "instance-name",
-		"environment_id":      "environment-name",
-		"collection_id":       "collection-name",
+		"resource_group":   "resource-group",
+		"instance_name":    "instance-name",
+		"environment_name": "environment-name",
+		"collection_name":  "collection-name",
 	}
 	parametersModel := GetParametersForCreate(d, ResourceIBMCdToolchainToolAppconfig(), remapFields)
 	createToolOptions.SetParameters(parametersModel)
@@ -229,11 +228,10 @@ func resourceIBMCdToolchainToolAppconfigRead(context context.Context, d *schema.
 		return diag.FromErr(fmt.Errorf("Error setting toolchain_id: %s", err))
 	}
 	remapFields := map[string]string{
-		"location":            "region",
-		"resource_group_name": "resource-group",
-		"instance_id":         "instance-name",
-		"environment_id":      "environment-name",
-		"collection_id":       "collection-name",
+		"resource_group":   "resource-group",
+		"instance_name":    "instance-name",
+		"environment_name": "environment-name",
+		"collection_name":  "collection-name",
 	}
 	parametersMap := GetParametersFromRead(toolchainTool.Parameters, ResourceIBMCdToolchainToolAppconfig(), remapFields)
 	if err = d.Set("parameters", []map[string]interface{}{parametersMap}); err != nil {
@@ -299,11 +297,10 @@ func resourceIBMCdToolchainToolAppconfigUpdate(context context.Context, d *schem
 	}
 	if d.HasChange("parameters") {
 		remapFields := map[string]string{
-			"location":            "region",
-			"resource_group_name": "resource-group",
-			"instance_id":         "instance-name",
-			"environment_id":      "environment-name",
-			"collection_id":       "collection-name",
+			"resource_group":   "resource-group",
+			"instance_name":    "instance-name",
+			"environment_name": "environment-name",
+			"collection_name":  "collection-name",
 		}
 		parameters := GetParametersForUpdate(d, ResourceIBMCdToolchainToolAppconfig(), remapFields)
 		patchVals.Parameters = parameters

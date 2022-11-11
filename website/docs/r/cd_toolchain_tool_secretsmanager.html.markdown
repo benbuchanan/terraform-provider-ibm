@@ -3,26 +3,26 @@ layout: "ibm"
 page_title: "IBM : ibm_cd_toolchain_tool_secretsmanager"
 description: |-
   Manages cd_toolchain_tool_secretsmanager.
-subcategory: "Continuous Delivery"
+subcategory: "CD Toolchain"
 ---
 
 # ibm_cd_toolchain_tool_secretsmanager
 
-Provides a resource for cd_toolchain_tool_secretsmanager. This allows cd_toolchain_tool_secretsmanager to be created, updated and deleted.
+~> **Beta:** This resource is in Beta, and is subject to change.
 
-See the [tool integration](https://cloud.ibm.com/docs/ContinuousDelivery?topic=ContinuousDelivery-secretsmanager) page for more information.
+Provides a resource for cd_toolchain_tool_secretsmanager. This allows cd_toolchain_tool_secretsmanager to be created, updated and deleted.
 
 ## Example Usage
 
 ```hcl
-resource "ibm_cd_toolchain_tool_secretsmanager" "cd_toolchain_tool_secretsmanager_instance" {
+resource "ibm_cd_toolchain_tool_secretsmanager" "cd_toolchain_tool_secretsmanager" {
   parameters {
-		name = "sm_tool_01"
-		instance_name = "Secrets Manager-XX"
-		location = "us-south"
-		resource_group_name = "Default"
+		name = "name"
+		region = "region"
+		resource_group = "resource_group"
+		instance_name = "instance_name"
   }
-  toolchain_id = ibm_cd_toolchain.cd_toolchain.id
+  toolchain_id = "toolchain_id"
 }
 ```
 
@@ -30,15 +30,15 @@ resource "ibm_cd_toolchain_tool_secretsmanager" "cd_toolchain_tool_secretsmanage
 
 Review the argument reference that you can specify for your resource.
 
-* `name` - (Optional, String) Name of the tool.
+* `name` - (Optional, String) Name of tool.
   * Constraints: The maximum length is `128` characters. The minimum length is `0` characters. The value must match regular expression `/^([^\\x00-\\x7F]|[a-zA-Z0-9-._ ])+$/`.
-* `parameters` - (Required, List) Unique key-value pairs representing parameters to be used to create the tool. A list of parameters for each tool integration can be found in the <a href="https://cloud.ibm.com/docs/ContinuousDelivery?topic=ContinuousDelivery-integrations">Configuring tool integrations page</a>.
+* `parameters` - (Required, List) Unique key-value pairs representing parameters to be used to create the tool.
 Nested scheme for **parameters**:
-	* `instance_name` - (Required, String) The name of the Secrets Manager service instance.
+	* `instance_name` - (Required, String) The name of your Secrets Manager instance. You should choose an entry from the list provided based on the selected region and resource group. e.g: Secrets Manager-01.
 	  * Constraints: The value must match regular expression `/\\S/`.
-	* `location` - (Required, String) The IBM Cloud location where the Secrets Manager service instance resides.
-	* `name` - (Required, String) The name used to identify this tool integration. Secret references include this name to identify the secrets store where the secrets reside. All secrets store tools integrated into a toolchain should have a unique name to allow secret resolution to function properly.
-	* `resource_group_name` - (Required, String) The name of the resource group where the Secrets Manager service instance resides.
+	* `name` - (Required, String) Enter a name for this tool integration. This name is displayed on your toolchain.
+	* `region` - (Required, String) Region.
+	* `resource_group` - (Required, String) Resource group.
 * `toolchain_id` - (Required, Forces new resource, String) ID of the toolchain to bind the tool to.
   * Constraints: The maximum length is `36` characters. The minimum length is `36` characters. The value must match regular expression `/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89abAB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$/`.
 
@@ -51,9 +51,9 @@ In addition to all argument references listed, you can access the following attr
 * `href` - (String) URI representing the tool.
 * `referent` - (List) Information on URIs to access this resource through the UI or API.
 Nested scheme for **referent**:
-	* `api_href` - (String) URI representing this resource through an API.
-	* `ui_href` - (String) URI representing this resource through the UI.
-* `resource_group_id` - (String) Resource group where the tool is located.
+	* `api_href` - (String) URI representing the this resource through an API.
+	* `ui_href` - (String) URI representing the this resource through the UI.
+* `resource_group_id` - (String) Resource group where tool can be found.
 * `state` - (String) Current configuration state of the tool.
   * Constraints: Allowable values are: `configured`, `configuring`, `misconfigured`, `unconfigured`.
 * `toolchain_crn` - (String) CRN of toolchain which the tool is bound to.

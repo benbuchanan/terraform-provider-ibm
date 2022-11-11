@@ -117,8 +117,10 @@ func testAccCheckIBMCmOfferingExists(n string, obj catalogmanagementv1.Offering)
 
 		getOfferingOptions := &catalogmanagementv1.GetOfferingOptions{}
 
-		getOfferingOptions.SetCatalogIdentifier(rs.Primary.Attributes["catalog_id"])
-		getOfferingOptions.SetOfferingID(rs.Primary.ID)
+		parts, err := flex.SepIdParts(rs.Primary.ID, "/")
+		if err != nil {
+			return err
+		}
 
 		offering, _, err := catalogManagementClient.GetOffering(getOfferingOptions)
 		if err != nil {
@@ -170,8 +172,13 @@ func testAccCheckIBMCmOfferingDestroy(s *terraform.State) error {
 
 		getOfferingOptions := &catalogmanagementv1.GetOfferingOptions{}
 
-		getOfferingOptions.SetCatalogIdentifier(rs.Primary.Attributes["catalog_id"])
-		getOfferingOptions.SetOfferingID(rs.Primary.ID)
+		parts, err := flex.SepIdParts(rs.Primary.ID, "/")
+		if err != nil {
+			return err
+		}
+
+		getOfferingOptions.SetCatalogIdentifier(parts[0])
+		getOfferingOptions.SetOfferingID(parts[1])
 
 		// Try to find the key
 		_, response, err := catalogManagementClient.GetOffering(getOfferingOptions)

@@ -31,7 +31,6 @@ func TestAccIBMKMSDataSource_basic(t *testing.T) {
 		},
 	})
 }
-
 func TestAccIBMKMSHPCSDataSource_basic(t *testing.T) {
 	t.Skip()
 	// bucketName := fmt.Sprintf("bucket", acctest.RandIntRange(10, 100))
@@ -180,21 +179,17 @@ func testAccCheckIBMKmsDataSourceKeysPolicyConfig(instanceName, keyName string, 
 		instance_id = ibm_resource_instance.kp_instance.guid
 		key_name       = "%s"
 		standard_key   = false
-	}
-	
-	resource "ibm_kms_key_policies" "testPolicy"{
-		instance_id = ibm_kms_key.test.instance_id
-		key_id = ibm_kms_key.test.key_id
-		rotation {
-			interval_month = %d
-		}
-		dual_auth_delete {
-			enabled = %t
+		policies {
+			rotation {
+				interval_month = %d
+			}
+			dual_auth_delete {
+				enabled = %t
+			}
 		}
 	}
 	data "ibm_kms_keys" "test" {
-		instance_id = "${ibm_kms_key_policies.testPolicy.instance_id}"
-		key_id = ibm_kms_key.test.key_id
+		instance_id = "${ibm_kms_key.test.instance_id}"
 	}
 `, instanceName, keyName, interval_month, enabled)
 }

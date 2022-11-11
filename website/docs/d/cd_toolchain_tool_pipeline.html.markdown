@@ -3,21 +3,21 @@ layout: "ibm"
 page_title: "IBM : ibm_cd_toolchain_tool_pipeline"
 description: |-
   Get information about cd_toolchain_tool_pipeline
-subcategory: "Continuous Delivery"
+subcategory: "CD Toolchain"
 ---
 
 # ibm_cd_toolchain_tool_pipeline
 
-Provides a read-only data source for cd_toolchain_tool_pipeline. You can then reference the fields of the data source in other resources within the same configuration using interpolation syntax.
+~> **Beta:** This data source is in Beta, and is subject to change.
 
-See the [tool integration](https://cloud.ibm.com/docs/ContinuousDelivery?topic=ContinuousDelivery-deliverypipeline) page for more information.
+Provides a read-only data source for cd_toolchain_tool_pipeline. You can then reference the fields of the data source in other resources within the same configuration using interpolation syntax.
 
 ## Example Usage
 
 ```hcl
 data "ibm_cd_toolchain_tool_pipeline" "cd_toolchain_tool_pipeline" {
-	tool_id = "9603dcd4-3c86-44f8-8d0a-9427369878cf"
-	toolchain_id = data.ibm_cd_toolchain.cd_toolchain.id
+	tool_id = "tool_id"
+	toolchain_id = ibm_cd_toolchain_tool_pipeline.cd_toolchain_tool_pipeline.toolchain_id
 }
 ```
 
@@ -41,16 +41,20 @@ In addition to all argument references listed, you can access the following attr
 
 * `name` - (String) Tool name.
 
-* `parameters` - (List) Unique key-value pairs representing parameters to be used to create the tool. A list of parameters for each tool integration can be found in the <a href="https://cloud.ibm.com/docs/ContinuousDelivery?topic=ContinuousDelivery-integrations">Configuring tool integrations page</a>.
+* `parameters` - (List) Unique key-value pairs representing parameters to be used to create the tool.
 Nested scheme for **parameters**:
-	* `name` - (String) The name used for this tool integration.
+	* `name` - (String)
+	* `type` - (String)
+	  * Constraints: Allowable values are: `classic`, `tekton`.
+	* `ui_pipeline` - (Boolean) When this check box is selected, the applications that this pipeline deploys are shown in the View app menu on the toolchain page. This setting is best for UI apps that can be accessed from a browser.
+	  * Constraints: The default value is `false`.
 
 * `referent` - (List) Information on URIs to access this resource through the UI or API.
 Nested scheme for **referent**:
-	* `api_href` - (String) URI representing this resource through an API.
-	* `ui_href` - (String) URI representing this resource through the UI.
+	* `api_href` - (String) URI representing the this resource through an API.
+	* `ui_href` - (String) URI representing the this resource through the UI.
 
-* `resource_group_id` - (String) Resource group where the tool is located.
+* `resource_group_id` - (String) Resource group where tool can be found.
 
 * `state` - (String) Current configuration state of the tool.
   * Constraints: Allowable values are: `configured`, `configuring`, `misconfigured`, `unconfigured`.

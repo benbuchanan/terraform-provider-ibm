@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/IBM/platform-services-go-sdk/globaltaggingv1"
@@ -26,6 +27,7 @@ const (
 	tagType      = "tag_type"
 	acccountID   = "acccount_id"
 	service      = "service"
+	crnRegex     = "^crn:v1(:[a-zA-Z0-9 \\-\\._~\\*\\+,;=!$&'\\(\\)\\/\\?#\\[\\]@]*){8}$|^[0-9]+$"
 )
 
 func ResourceIBMResourceTag() *schema.Resource {
@@ -169,10 +171,15 @@ func resourceIBMResourceTagCreate(d *schema.ResourceData, meta interface{}) erro
 		}
 	}
 
-	if strings.HasPrefix(resourceID, "crn:") {
+	crn, err := regexp.Compile(crnRegex)
+	if err != nil {
+		return err
+	}
+
+	if crn.MatchString(resourceID) {
 		d.SetId(resourceID)
 	} else {
-		d.SetId(fmt.Sprintf("%s/%s", resourceID, rType))
+		d.SetId(fmt.Sprintf("%s/%s", resourceID, resourceType))
 	}
 
 	return resourceIBMResourceTagRead(d, meta)
@@ -187,7 +194,12 @@ func resourceIBMResourceTagRead(d *schema.ResourceData, meta interface{}) error 
 	}
 	acctID := userDetails.UserAccount
 
-	if strings.HasPrefix(d.Id(), "crn:") {
+	crn, err := regexp.Compile(crnRegex)
+	if err != nil {
+		return err
+	}
+
+	if crn.MatchString(d.Id()) {
 		rID = d.Id()
 	} else {
 		parts, err := flex.VmIdParts(d.Id())
@@ -208,21 +220,14 @@ func resourceIBMResourceTagRead(d *schema.ResourceData, meta interface{}) error 
 			d.Set(acccountID, acctID)
 		}
 	}
-	tagList, err := flex.GetGlobalTagsUsingCRN(meta, rID, rType, tType)
+
+	tagList, err := flex.GetGlobalTagsUsingCRN(meta, rID, resourceType, tType)
 	if err != nil {
 		if apierr, ok := err.(bmxerror.RequestFailure); ok && apierr.StatusCode() == 404 {
 			d.SetId("")
 			return nil
-		} else if strings.Contains(err.Error(), "Too Many Requests") {
-
-			tagList, err = flex.GetGlobalTagsUsingSearchAPI(meta, rID, rType, tType)
-			if err != nil {
-				return fmt.Errorf("[ERROR] Error getting resource tags for: %s with error : %s", rID, err)
-			}
-		} else {
-			return fmt.Errorf("[ERROR] Error getting resource tags for: %s with error : %s", rID, err)
 		}
-
+		return fmt.Errorf("[ERROR] Error getting resource tags for: %s with error : %s", rID, err)
 	}
 
 	d.Set(resourceID, rID)
@@ -235,7 +240,12 @@ func resourceIBMResourceTagRead(d *schema.ResourceData, meta interface{}) error 
 func resourceIBMResourceTagUpdate(d *schema.ResourceData, meta interface{}) error {
 	var rID, rType, tType string
 
-	if strings.HasPrefix(d.Id(), "crn:") {
+	crn, err := regexp.Compile(crnRegex)
+	if err != nil {
+		return err
+	}
+
+	if crn.MatchString(d.Id()) {
 		rID = d.Id()
 	} else {
 		parts, err := flex.VmIdParts(d.Id())
@@ -264,7 +274,12 @@ func resourceIBMResourceTagUpdate(d *schema.ResourceData, meta interface{}) erro
 func resourceIBMResourceTagDelete(d *schema.ResourceData, meta interface{}) error {
 	var rID, rType string
 
-	if strings.HasPrefix(d.Id(), "crn:") {
+	crn, err := regexp.Compile(crnRegex)
+	if err != nil {
+		return err
+	}
+
+	if crn.MatchString(d.Id()) {
 		rID = d.Id()
 	} else {
 		parts, err := flex.VmIdParts(d.Id())

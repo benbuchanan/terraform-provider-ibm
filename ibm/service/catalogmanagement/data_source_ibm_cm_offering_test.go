@@ -36,6 +36,7 @@ func TestAccIBMCmOfferingDataSourceSimpleArgs(t *testing.T) {
 	offeringOfferingIconURL := fmt.Sprintf("tf_offering_icon_url_%d", acctest.RandIntRange(10, 100))
 	offeringShortDescription := fmt.Sprintf("tf_offering_icon_url_%d", acctest.RandIntRange(10, 100))
 
+func TestAccIBMCmOfferingDataSourceBasic(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { acc.TestAccPreCheck(t) },
 		Providers: acc.TestAccProviders,

@@ -24,7 +24,7 @@ resource "ibm_cd_toolchain_tool_hostedgit" "tekton_repo" {
     repo_name = var.repo_name
   }  
   parameters {
-    toolchain_issues_enabled = false
+    has_issues          = false
     enable_traceability = false
   }
 }
@@ -34,6 +34,7 @@ resource "ibm_cd_toolchain_tool_pipeline" "cd_pipeline" {
   toolchain_id = ibm_cd_toolchain.toolchain_instance.id
   parameters {
     name = "tf-pipeline"
+    type = "tekton"
   }
 }
 resource "ibm_cd_tekton_pipeline" "cd_pipeline_instance" {

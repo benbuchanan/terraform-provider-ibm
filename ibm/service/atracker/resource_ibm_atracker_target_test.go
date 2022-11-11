@@ -58,32 +58,14 @@ func testAccCheckIBMAtrackerTargetConfigBasic(name string, targetType string) st
 			name = "%s"
 			target_type = "%s"
 			cos_endpoint {
-					endpoint = "s3.private.us-east.cloud-object-storage.appdomain.cloud"
-					target_crn = "crn:v1:bluemix:public:cloud-object-storage:global:a/11111111111111111111111111111111:22222222-2222-2222-2222-222222222222::"
-					bucket = "my-atracker-bucket"
-					api_key = "xxxxxxxxxxxxxx"
-					service_to_service_enabled = true
-			}
-		}
-	`, name, targetType)
-}
-
-func testAccCheckIBMAtrackerTargetConfig(name string, targetType string, region string) string {
-	return fmt.Sprintf(`
-
-		resource "ibm_atracker_target" "atracker_target" {
-			name = "%s"
-			target_type = "%s"
-			cos_endpoint {
 				endpoint = "s3.private.us-east.cloud-object-storage.appdomain.cloud"
 				target_crn = "crn:v1:bluemix:public:cloud-object-storage:global:a/11111111111111111111111111111111:22222222-2222-2222-2222-222222222222::"
 				bucket = "my-atracker-bucket"
 				api_key = "xxxxxxxxxxxxxx"
-				service_to_service_enabled = true
+				service_to_service_enabled = false
 			}
-			region = "%s"
 		}
-	`, name, targetType, region)
+	`, name, targetType)
 }
 
 func testAccCheckIBMAtrackerTargetExists(n string, obj atrackerv2.Target) resource.TestCheckFunc {

@@ -15,17 +15,18 @@ import (
 
 func TestAccIBMCdToolchainToolArtifactoryDataSourceBasic(t *testing.T) {
 	tcName := fmt.Sprintf("tf_name_%d", acctest.RandIntRange(10, 100))
-	rgName := acc.CdResourceGroupName
+	rgID := acc.CdResourceGroupID
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { acc.TestAccPreCheck(t) },
 		Providers: acc.TestAccProviders,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccCheckIBMCdToolchainToolArtifactoryDataSourceConfigBasic(tcName, rgName),
+				Config: testAccCheckIBMCdToolchainToolArtifactoryDataSourceConfigBasic(tcName, rgID),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory", "id"),
 					resource.TestCheckResourceAttrSet("data.ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory", "toolchain_id"),
+					resource.TestCheckResourceAttrSet("data.ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory", "tool_id"),
 					resource.TestCheckResourceAttrSet("data.ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory", "tool_id"),
 					resource.TestCheckResourceAttrSet("data.ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory", "resource_group_id"),
 					resource.TestCheckResourceAttrSet("data.ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory", "crn"),
@@ -43,18 +44,19 @@ func TestAccIBMCdToolchainToolArtifactoryDataSourceBasic(t *testing.T) {
 
 func TestAccIBMCdToolchainToolArtifactoryDataSourceAllArgs(t *testing.T) {
 	tcName := fmt.Sprintf("tf_name_%d", acctest.RandIntRange(10, 100))
-	rgName := acc.CdResourceGroupName
-	toolName := fmt.Sprintf("tf_name_%d", acctest.RandIntRange(10, 100))
+	rgID := acc.CdResourceGroupID
+	getToolByIDResponseName := fmt.Sprintf("tf_name_%d", acctest.RandIntRange(10, 100))
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:  func() { acc.TestAccPreCheck(t) },
 		Providers: acc.TestAccProviders,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccCheckIBMCdToolchainToolArtifactoryDataSourceConfig(tcName, rgName, toolName),
+				Config: testAccCheckIBMCdToolchainToolArtifactoryDataSourceConfig(tcName, rgID, getToolByIDResponseName),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet("data.ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory", "id"),
 					resource.TestCheckResourceAttrSet("data.ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory", "toolchain_id"),
+					resource.TestCheckResourceAttrSet("data.ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory", "tool_id"),
 					resource.TestCheckResourceAttrSet("data.ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory", "tool_id"),
 					resource.TestCheckResourceAttrSet("data.ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory", "resource_group_id"),
 					resource.TestCheckResourceAttrSet("data.ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory", "crn"),
@@ -71,30 +73,26 @@ func TestAccIBMCdToolchainToolArtifactoryDataSourceAllArgs(t *testing.T) {
 	})
 }
 
-func testAccCheckIBMCdToolchainToolArtifactoryDataSourceConfigBasic(tcName string, rgName string) string {
+func testAccCheckIBMCdToolchainToolArtifactoryDataSourceConfigBasic(tcName string, rgID string) string {
 	return fmt.Sprintf(`
-		data "ibm_resource_group" "resource_group" {
-			name = "%s"
-		}
-
 		resource "ibm_cd_toolchain" "cd_toolchain" {
 			name = "%s"
-			resource_group_id = data.ibm_resource_group.resource_group.id
+			resource_group_id = "%s"
 		}
 
 		resource "ibm_cd_toolchain_tool_artifactory" "cd_toolchain_tool_artifactory" {
 			toolchain_id = ibm_cd_toolchain.cd_toolchain.id
 			parameters {
-				name = "artifactory-tool-01"
-				dashboard_url = "https://mycompany.example.jfrog.io"
-				type = "docker"
-				user_id = "<user_id>"
+				name = "name"
+				dashboard_url = "dashboard_url"
+				type = "npm"
+				user_id = "user_id"
+				token = "token"
 				release_url = "release_url"
 				mirror_url = "mirror_url"
 				snapshot_url = "snapshot_url"
-				repository_name = "default-docker-local"
-				repository_url = "https://mycompany.example.jfrog.io/artifactory/default-docker-local"
-				api_key = "<api_key>"
+				repository_name = "repository_name"
+				repository_url = "repository_url"
 			}
 		}
 
@@ -102,33 +100,29 @@ func testAccCheckIBMCdToolchainToolArtifactoryDataSourceConfigBasic(tcName strin
 			toolchain_id = ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory.toolchain_id
 			tool_id = ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory.tool_id
 		}
-	`, rgName, tcName)
+	`, tcName, rgID)
 }
 
-func testAccCheckIBMCdToolchainToolArtifactoryDataSourceConfig(tcName string, rgName string, toolName string) string {
+func testAccCheckIBMCdToolchainToolArtifactoryDataSourceConfig(tcName string, rgID string, getToolByIDResponseName string) string {
 	return fmt.Sprintf(`
-		data "ibm_resource_group" "resource_group" {
-			name = "%s"
-		}
-
 		resource "ibm_cd_toolchain" "cd_toolchain" {
 			name = "%s"
-			resource_group_id = data.ibm_resource_group.resource_group.id
+			resource_group_id = "%s"
 		}
 
 		resource "ibm_cd_toolchain_tool_artifactory" "cd_toolchain_tool_artifactory" {
 			toolchain_id = ibm_cd_toolchain.cd_toolchain.id
 			parameters {
-				name = "artifactory-tool-01"
-				dashboard_url = "https://mycompany.example.jfrog.io"
-				type = "docker"
-				user_id = "<user_id>"
+				name = "name"
+				dashboard_url = "dashboard_url"
+				type = "npm"
+				user_id = "user_id"
+				token = "token"
 				release_url = "release_url"
 				mirror_url = "mirror_url"
 				snapshot_url = "snapshot_url"
-				repository_name = "default-docker-local"
-				repository_url = "https://mycompany.example.jfrog.io/artifactory/default-docker-local"
-				api_key = "<api_key>"
+				repository_name = "repository_name"
+				repository_url = "repository_url"
 			}
 			name = "%s"
 		}
@@ -137,5 +131,5 @@ func testAccCheckIBMCdToolchainToolArtifactoryDataSourceConfig(tcName string, rg
 			toolchain_id = ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory.toolchain_id
 			tool_id = ibm_cd_toolchain_tool_artifactory.cd_toolchain_tool_artifactory.tool_id
 		}
-	`, rgName, tcName, toolName)
+	`, tcName, rgID, getToolByIDResponseName)
 }

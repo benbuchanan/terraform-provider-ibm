@@ -368,8 +368,14 @@ func resourceIBMCmCatalogCreate(context context.Context, d *schema.ResourceData,
 	if _, ok := d.GetOk("label"); ok {
 		createCatalogOptions.SetLabel(d.Get("label").(string))
 	}
+	if _, ok := d.GetOk("label_i18n"); ok {
+		// TODO: Add code to handle map container: LabelI18n
+	}
 	if _, ok := d.GetOk("short_description"); ok {
 		createCatalogOptions.SetShortDescription(d.Get("short_description").(string))
+	}
+	if _, ok := d.GetOk("short_description_i18n"); ok {
+		// TODO: Add code to handle map container: ShortDescriptionI18n
 	}
 	if _, ok := d.GetOk("catalog_icon_url"); ok {
 		createCatalogOptions.SetCatalogIconURL(d.Get("catalog_icon_url").(string))
@@ -460,6 +466,18 @@ func resourceIBMCmCatalogRead(context context.Context, d *schema.ResourceData, m
 		if err = d.Set("tags", catalog.Tags); err != nil {
 			return diag.FromErr(fmt.Errorf("Error setting tags: %s", err))
 		}
+		if err = d.Set("syndication_settings", []map[string]interface{}{syndicationSettingsMap}); err != nil {
+			return diag.FromErr(fmt.Errorf("Error setting syndication_settings: %s", err))
+		}
+	}
+	if err = d.Set("kind", catalog.Kind); err != nil {
+		return diag.FromErr(fmt.Errorf("Error setting kind: %s", err))
+	}
+	if catalog.Metadata != nil {
+		// TODO: handle Metadata of type TypeMap -- not primitive type, not list
+	}
+	if err = d.Set("rev", catalog.Rev); err != nil {
+		return diag.FromErr(fmt.Errorf("Error setting rev: %s", err))
 	}
 	features := []map[string]interface{}{}
 	if catalog.Features != nil {
